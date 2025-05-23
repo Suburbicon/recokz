@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/shared/providers/theme";
 import { Toaster } from "@/shared/ui/sonner";
 import { ClerkProvider } from "@/shared/providers/clerk";
+import { TRPCProvider } from "@/shared/providers/trpc";
 
 const geologica = Geologica({
   variable: "--font-geologica",
@@ -25,15 +26,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geologica.variable} antialiased`}>
         <ClerkProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          <TRPCProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </TRPCProvider>
         </ClerkProvider>
       </body>
     </html>

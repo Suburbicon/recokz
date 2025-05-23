@@ -1,0 +1,131 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id               String            @id @default(uuid()) @map("id")
+  name             String
+  xin              String
+  reports          Report[]
+  createdAt        DateTime          @default(now()) @map("created_at")
+  transactionTypes TransactionType[]
+
+  @@map("organizations")
+}
+
+model Report {
+  id          String       @id @default(uuid()) @map("id")
+  startDate   DateTime     @map("start_date")
+  endDate     DateTime     @map("end_date")
+  cashBalance Int          @map("cash_balance")
+  status      ReportStatus @default(import_info) @map("status")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String       @map("organization_id")
+
+  documents       Document[]
+  reconciliations Reconciliation[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("reports")
+}
+
+enum ReportStatus {
+  import_info
+  import_bank
+  import_crm
+  sales
+  expenses
+  done
+}
+
+model Document {
+  id      String       @id @default(uuid()) @map("id")
+  name    String       @map("name")
+  balance Int          @map("balance")
+  link    String       @map("link")
+  type    DocumentType @map("type")
+
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId String @map("report_id")
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("documents")
+}
+
+enum DocumentType {
+  kaspi
+  kaspi_sales
+  kaspi_statement
+  halyk
+  halyk_statement
+  moysklad
+}
+
+model Transaction {
+  id     String   @id @default(uuid()) @map("id")
+  amount Int      @map("amount")
+  date   DateTime @map("date")
+
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String?   @map("document_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bankReconciliations Reconciliation[] @relation("CrmTransaction")
+  crmReconciliations  Reconciliation[] @relation("BankTransaction")
+
+  @@map("transactions")
+}
+
+model Reconciliation {
+  id String @id @default(uuid()) @map("id")
+
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  reportId String @map("report_id")
+
+  bankTransaction   Transaction? @relation("BankTransaction", fields: [bankTransactionId], references: [id])
+  bankTransactionId String?      @map("bank_transaction_id")
+
+  crmTransaction   Transaction? @relation("CrmTransaction", fields: [crmTransactionId], references: [id])
+  crmTransactionId String?      @map("crm_transaction_id")
+
+  type   TransactionType? @relation(fields: [typeId], references: [id])
+  typeId String?          @map("type_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reconciliations")
+}
+
+model TransactionType {
+  id   String @id @default(uuid()) @map("id")
+  name String
+
+  category TransactionCategory @default(income) @map("category")
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?       @map("organization_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reconciliation Reconciliation[]
+
+  @@map("transaction_types")
+}
+
+enum TransactionCategory {
+  income
+  expense
+}

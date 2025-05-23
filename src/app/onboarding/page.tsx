@@ -1,3 +1,5 @@
+"use client";
+
 import { OnboardingForm } from "@/modules/auth/onboarding-form";
 
 export default function Onboarding() {
