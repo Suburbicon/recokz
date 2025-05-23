@@ -2,6 +2,7 @@ import { Typography } from "@/shared/ui/typography";
 import CheckIcon from "@/shared/icons/check.svg";
 import { Button } from "@/shared/ui/button";
 import FadeIn from "@/shared/ui/fade-in";
+import Link from "next/link";
 
 export function PricingSection() {
   return (
@@ -132,7 +133,9 @@ function PricingCard({
         </div>
 
         <div className="flex flex-col items-center gap-5">
-          <Button className="w-full">Попробовать бесплатно</Button>
+          <Link href="/sign-in">
+            <Button className="w-full">Попробовать бесплатно</Button>
+          </Link>
           <Typography size="body-16">60 дней бесплатно</Typography>
         </div>
       </div>

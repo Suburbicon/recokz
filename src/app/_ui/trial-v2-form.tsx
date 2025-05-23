@@ -2,6 +2,7 @@ import { Typography } from "@/shared/ui/typography";
 import { Button } from "@/shared/ui/button";
 import Image from "next/image";
 import FadeIn from "@/shared/ui/fade-in";
+import Link from "next/link";
 
 export function TrialV2FormSection() {
   return (
@@ -30,9 +31,11 @@ export function TrialV2FormSection() {
             </Typography>
           </div>
           <div>
-            <Button className="lg:w-[400px] w-full z-20 relative">
-              Попробовать бесплатно
-            </Button>
+            <Link href="/sign-in">
+              <Button className="lg:w-[400px] w-full z-20 relative">
+                Попробовать бесплатно
+              </Button>
+            </Link>
           </div>
 
           <Image

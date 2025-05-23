@@ -1,9 +1,10 @@
 import LogoWhite from "@/shared/icons/logo-white.svg";
-import { Typography } from "@/shared/ui/typography";
+// import { Typography } from "@/shared/ui/typography";
 import { Button } from "@/shared/ui/button";
 import Image from "next/image";
 import FadeIn from "@/shared/ui/fade-in";
 import Link from "next/link";
+// import Link from "next/link";
 
 export function Header() {
   return (
@@ -12,7 +13,7 @@ export function Header() {
         <FadeIn className="py-5 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <LogoWhite />
-            <nav className="lg:flex gap-8 bg-white-4 px-8 py-4 rounded-full border border-white-10 hidden">
+            {/* <nav className="lg:flex gap-8 bg-white-4 px-8 py-4 rounded-full border border-white-10 hidden">
               <Link href="#pricing">
                 <Typography
                   size="body-16"
@@ -40,10 +41,12 @@ export function Header() {
                   Вопросы и ответы
                 </Typography>
               </Link>
-            </nav>
+            </nav> */}
           </div>
 
-          <Button>Попробовать</Button>
+          <Link href="/sign-in">
+            <Button>Попробовать</Button>
+          </Link>
         </FadeIn>
       </header>
 

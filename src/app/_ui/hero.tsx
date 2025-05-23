@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Typography } from "@/shared/ui/typography";
 import { Button } from "@/shared/ui/button";
 import FadeIn from "@/shared/ui/fade-in";
+import Link from "next/link";
 
 export function HeroSection() {
   return (
@@ -27,9 +28,11 @@ export function HeroSection() {
             поисков недочетов.
           </Typography>
           <div className="flex flex-col items-center gap-5 lg:w-auto w-full">
-            <Button size="lg" className="lg:w-auto w-full">
-              Начать пробный период
-            </Button>
+            <Link href="/sign-in">
+              <Button size="lg" className="lg:w-auto w-full">
+                Начать пробный период
+              </Button>
+            </Link>
             <Typography size="body-16" color="gray-200">
               60 дней бесплатно
             </Typography>
