@@ -1,7 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
+import { prisma } from '@/shared/lib/prisma';
 
 /**
  * 1. CONTEXT
@@ -12,9 +13,12 @@ import { ZodError } from 'zod';
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const { userId } = await auth();
+  const clerk = await clerkClient();
 
   return {
     userId,
+    prisma,
+    clerk,
     ...opts,
   };
 };
@@ -68,6 +72,8 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   return next({
     ctx: {
       userId: ctx.userId,
+      prisma: ctx.prisma,
+      clerk: ctx.clerk,
     },
   });
 });

@@ -1,12 +1,16 @@
 "use client";
 
+import { api } from "@/shared/lib/trpc/client";
 import { xinValidator } from "@/shared/lib/validators";
 import { InputField } from "@/shared/ui/_fields/input-field";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
 import { Typography } from "@/shared/ui/typography";
+import { useUser } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 const formSchema = z.object({
@@ -17,6 +21,9 @@ const formSchema = z.object({
 });
 
 export function OnboardingForm() {
+  const router = useRouter();
+  const { user } = useUser();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -25,8 +32,19 @@ export function OnboardingForm() {
     },
   });
 
+  const { mutateAsync: createOrganization } =
+    api.organization.create.useMutation({
+      onSuccess: async () => {
+        await user?.reload();
+        router.push("/cabinet");
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    });
+
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    await createOrganization(values);
   };
 
   return (
@@ -44,12 +62,6 @@ export function OnboardingForm() {
               </Typography>
             </div>
 
-            <div className="flex items-center my-2">
-              <div className="flex-grow h-px bg-gray-400"></div>
-              <span className="px-3 text-gray-500 text-sm">или</span>
-              <div className="flex-grow h-px bg-gray-400"></div>
-            </div>
-
             <div className="flex flex-col gap-6">
               <InputField name="name" placeholder="Название организации" />
               <InputField name="xin" placeholder="ИИН" type="text" />
@@ -60,9 +72,7 @@ export function OnboardingForm() {
                 Нажимая кнопку “Продолжить”, вы
                 <br /> соглашаетесь с Политикой конфиденциальности
               </Typography>
-              <Button size="lg" type="submit">
-                Продолжить
-              </Button>
+              <Button type="submit">Продолжить</Button>
             </div>
           </div>
         </form>
