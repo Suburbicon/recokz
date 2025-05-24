@@ -63,8 +63,17 @@ export function OnboardingForm() {
             </div>
 
             <div className="flex flex-col gap-6">
-              <InputField name="name" placeholder="Название организации" />
-              <InputField name="xin" placeholder="ИИН" type="text" />
+              <InputField
+                inputSize="lg"
+                name="name"
+                placeholder="Название организации"
+              />
+              <InputField
+                inputSize="lg"
+                name="xin"
+                placeholder="ИИН"
+                type="text"
+              />
             </div>
 
             <div className="flex justify-between items-center gap-12">

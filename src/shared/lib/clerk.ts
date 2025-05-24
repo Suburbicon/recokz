@@ -26,7 +26,7 @@ export const useClerkSignUp = () => {
           "Проверьте свою электронную почту на наличие ссылки для подтверждения.",
       });
     } catch (error) {
-      toast.error ("Не удалось зарегистрироваться", {
+      toast.error("Не удалось зарегистрироваться", {
         description: "Попробуйте ещё раз",
       });
       console.error(error);
@@ -83,7 +83,8 @@ export const useClerkSignIn = () => {
       }
     } catch (error) {
       toast.error("Ошибка при входе", {
-        description: "Проверьте правильность введённых данных и попробуйте ещё раз",
+        description:
+          "Проверьте правильность введённых данных и попробуйте ещё раз",
       });
       console.error(error);
     } finally {

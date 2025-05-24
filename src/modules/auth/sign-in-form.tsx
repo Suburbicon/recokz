@@ -58,8 +58,13 @@ export function SignInForm() {
             </div>
 
             <div className="flex flex-col gap-6">
-              <InputField name="email" placeholder="Ваша почта" />
               <InputField
+                inputSize="lg"
+                name="email"
+                placeholder="Ваша почта"
+              />
+              <InputField
+                inputSize="lg"
                 name="password"
                 placeholder="Ваш пароль"
                 type="password"

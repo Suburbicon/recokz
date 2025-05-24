@@ -1,8 +1,8 @@
-import { initTRPC, TRPCError } from '@trpc/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import superjson from 'superjson';
-import { ZodError } from 'zod';
-import { prisma } from '@/shared/lib/prisma';
+import { initTRPC, TRPCError } from "@trpc/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import superjson from "superjson";
+import { ZodError } from "zod";
+import { prisma } from "@/shared/lib/prisma";
 
 /**
  * 1. CONTEXT
@@ -12,11 +12,12 @@ import { prisma } from '@/shared/lib/prisma';
  * processing a request
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   const clerk = await clerkClient();
 
   return {
     userId,
+    organizationId: sessionClaims?.metadata.organizationId,
     prisma,
     clerk,
     ...opts,
@@ -67,11 +68,12 @@ export const publicProcedure = t.procedure;
  */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.userId) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
       userId: ctx.userId,
+      organizationId: ctx.organizationId,
       prisma: ctx.prisma,
       clerk: ctx.clerk,
     },

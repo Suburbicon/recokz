@@ -7,15 +7,14 @@ import {
   FormLabel,
   FormMessage,
 } from "../form";
-import { Input } from "../input";
-import { InputHTMLAttributes } from "react";
+import { Input, InputProps } from "../input";
 
-interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+type InputFieldProps = InputProps & {
   name: string;
   label?: string;
   description?: string;
   placeholder?: string;
-}
+};
 
 export function InputField({
   name,
