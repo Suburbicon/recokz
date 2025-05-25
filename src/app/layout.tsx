@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/shared/providers/theme";
 import { Toaster } from "@/shared/ui/sonner";
 import { ClerkProvider } from "@/shared/providers/clerk";
 import { TRPCProvider } from "@/shared/providers/trpc";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 const geologica = Geologica({
   variable: "--font-geologica",
@@ -33,7 +34,9 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {children}
+              <NuqsAdapter>
+                {children}
+              </NuqsAdapter>
               <Toaster />
             </ThemeProvider>
           </TRPCProvider>

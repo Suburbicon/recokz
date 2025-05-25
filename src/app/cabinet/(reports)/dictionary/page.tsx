@@ -1,5 +1,5 @@
-import { TransactionTypeCreate } from "@/modules/transaction-type/create";
-import { TransactionTypeList } from "@/modules/transaction-type/list";
+import { TransactionTypeCreate } from "@/modules/transaction-types/create";
+import { TransactionTypeList } from "@/modules/transaction-types/list";
 
 export default async function Page() {
   return (

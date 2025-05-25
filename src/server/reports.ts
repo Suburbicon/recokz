@@ -1,0 +1,47 @@
+import { createTRPCRouter } from "@/shared/lib/trpc/server";
+import { protectedProcedure } from "@/shared/lib/trpc/server";
+import { ReportStatus } from "@prisma/client";
+import { z } from "zod";
+
+export const reportsRouter = createTRPCRouter({
+    getAll: protectedProcedure
+      .query(async ({ ctx }) => {
+        const reports = await ctx.prisma.report.findMany({
+          where: {
+            organizationId: ctx.organizationId
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+        return reports;
+      }),
+    create: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const report = await ctx.prisma.report.create({
+          data: {
+            startDate: new Date(),
+            endDate: new Date(),
+            cashBalance: 0,
+            status: ReportStatus.import_info,
+            organization: {
+              connect: {
+                id: ctx.organizationId as string,
+              },
+            },
+          },
+        });
+
+        return report
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await ctx.prisma.report.delete({
+          where: {
+            id: input.id,
+            organizationId: ctx.organizationId,
+          },
+        });
+      }),
+})
