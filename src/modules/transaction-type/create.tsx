@@ -13,7 +13,6 @@ import {
 import { DialogContent } from "@/shared/ui/dialog";
 import { Form } from "@/shared/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,7 +25,7 @@ const formSchema = z.object({
 
 export function TransactionTypeCreate() {
   const [isOpen, setIsOpen] = useState(false);
-  const queryClient = useQueryClient();
+  const utils = api.useUtils();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,7 +38,7 @@ export function TransactionTypeCreate() {
   const { mutateAsync: createTransactionType } =
     api.transactionType.create.useMutation({
       onSuccess: () => {
-        queryClient.refetchQueries({ queryKey: ["transactionType.getAll"] });
+        utils.transactionType.getAll.invalidate();
         toast.success("Тип транзакции успешно создан");
         setIsOpen(false);
       },
