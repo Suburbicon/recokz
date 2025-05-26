@@ -1,4 +1,5 @@
 import { api } from "@/shared/lib/trpc/client";
+import { Button } from "@/shared/ui/button";
 import { TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,11 +23,8 @@ export function DeleteTransactionTypeButton({ id }: Props) {
   });
 
   return (
-    <button
-      className="text-red-400 hover:text-red-500 cursor-pointer"
-      onClick={() => mutate({ id })}
-    >
+    <Button variant="ghost" size="icon" onClick={() => mutate({ id })}>
       <TrashIcon size={16} />
-    </button>
+    </Button>
   );
 }

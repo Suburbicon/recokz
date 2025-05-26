@@ -8,7 +8,11 @@ export function EmptyReports() {
         <Typography size="h4-med" color="white">
           У вас пока нет сверок
         </Typography>
-        <Typography size="body-16" color="gray-300" className="max-w-[460px] text-center">
+        <Typography
+          size="body-16"
+          color="gray-300"
+          className="max-w-[460px] text-center"
+        >
           Все сверки появятся на этой странице, как только вы начнете работу с
           ними
         </Typography>
@@ -25,7 +29,11 @@ export function EmptyReportsInProgress() {
         <Typography size="h4-med" color="white">
           У вас пока нет сверок в работе
         </Typography>
-        <Typography size="body-16" color="gray-300" className="max-w-[460px] text-center">
+        <Typography
+          size="body-16"
+          color="gray-300"
+          className="max-w-[460px] text-center"
+        >
           Все сверки появятся на этой странице, как только вы начнете работу с
           ними
         </Typography>
@@ -42,7 +50,11 @@ export function EmptyReportsDone() {
         <Typography size="h4-med" color="white">
           У вас пока нет завершенных сверок
         </Typography>
-        <Typography size="body-16" color="gray-300" className="max-w-[460px] text-center">
+        <Typography
+          size="body-16"
+          color="gray-300"
+          className="max-w-[460px] text-center"
+        >
           Все сверки появятся на этой странице, как только вы начнете работу с
           ними
         </Typography>

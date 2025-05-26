@@ -4,44 +4,80 @@ import { ReportStatus } from "@prisma/client";
 import { z } from "zod";
 
 export const reportsRouter = createTRPCRouter({
-    getAll: protectedProcedure
-      .query(async ({ ctx }) => {
-        const reports = await ctx.prisma.report.findMany({
-          where: {
-            organizationId: ctx.organizationId
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-        return reports;
-      }),
-    create: protectedProcedure
-      .mutation(async ({ ctx }) => {
-        const report = await ctx.prisma.report.create({
-          data: {
-            startDate: new Date(),
-            endDate: new Date(),
-            cashBalance: 0,
-            status: ReportStatus.import_info,
-            organization: {
-              connect: {
-                id: ctx.organizationId as string,
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const report = await ctx.prisma.report.findUnique({
+        where: {
+          id: input.id,
+          organizationId: ctx.organizationId,
+        },
+        include: {
+          documents: {
+            include: {
+              transactions: {
+                include: {
+                  bankReconciliations: true,
+                  crmReconciliations: true,
+                },
               },
             },
           },
-        });
-
-        return report
-      }),
-    delete: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        await ctx.prisma.report.delete({
-          where: {
-            id: input.id,
-            organizationId: ctx.organizationId,
+          reconciliations: {
+            include: {
+              bankTransaction: {
+                include: {
+                  document: true,
+                },
+              },
+              crmTransaction: {
+                include: {
+                  document: true,
+                },
+              },
+              type: true,
+            },
           },
-        });
-      }),
-})
+        },
+      });
+      return report;
+    }),
+  getAll: protectedProcedure.query(async ({ ctx }) => {
+    const reports = await ctx.prisma.report.findMany({
+      where: {
+        organizationId: ctx.organizationId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return reports;
+  }),
+  create: protectedProcedure.mutation(async ({ ctx }) => {
+    const report = await ctx.prisma.report.create({
+      data: {
+        startDate: new Date(),
+        endDate: new Date(),
+        cashBalance: 0,
+        status: ReportStatus.import_info,
+        organization: {
+          connect: {
+            id: ctx.organizationId as string,
+          },
+        },
+      },
+    });
+
+    return report;
+  }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.report.delete({
+        where: {
+          id: input.id,
+          organizationId: ctx.organizationId,
+        },
+      });
+    }),
+});

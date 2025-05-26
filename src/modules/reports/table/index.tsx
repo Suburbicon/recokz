@@ -50,7 +50,8 @@ export function ReportsTable() {
         <div>
           <h3 className="text-2xl font-semibold">Все сверки</h3>
           <p className="text-muted-foreground">
-            {allCount} всего, {inProgressCount} в работе, {doneCount} завершенные
+            {allCount} всего, {inProgressCount} в работе, {doneCount}{" "}
+            завершенные
           </p>
         </div>
         <ReportsTableTabs />
@@ -69,7 +70,9 @@ export function ReportsTable() {
           <TableBody>
             {displayedReports.map((item, index: number) => (
               <TableRow key={index}>
-                <TableCell>{dayjs(item.startDate).format("DD.MM.YYYY")}</TableCell>
+                <TableCell>
+                  {dayjs(item.startDate).format("DD.MM.YYYY")}
+                </TableCell>
                 <TableCell>{item.cashBalance}</TableCell>
                 <TableCell>
                   {item.status !== ReportStatus.done ? (
@@ -85,11 +88,7 @@ export function ReportsTable() {
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <DeleteReportButton id={item.id} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      asChild
-                    >
+                    <Button variant="ghost" size="icon" asChild>
                       <Link href={`/cabinet/${item.id}`}>
                         <Pencil className="h-4 w-4 text-muted-foreground" />
                       </Link>
