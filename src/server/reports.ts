@@ -70,6 +70,45 @@ export const reportsRouter = createTRPCRouter({
 
     return report;
   }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        date: z.string().optional(),
+        cashBalance: z.number().optional(),
+        status: z.nativeEnum(ReportStatus).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, date, ...updates } = input;
+
+      const dataToUpdate: {
+        cashBalance?: number;
+        status?: ReportStatus;
+        startDate?: Date;
+        endDate?: Date;
+      } = {
+        ...updates,
+      };
+
+      if (date) {
+        const parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          dataToUpdate.startDate = parsedDate;
+          dataToUpdate.endDate = parsedDate;
+        }
+      }
+
+      const report = await ctx.prisma.report.update({
+        where: { 
+          id,
+          organizationId: ctx.organizationId,
+        },
+        data: dataToUpdate,
+      });
+
+      return report;
+    }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {

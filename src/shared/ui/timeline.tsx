@@ -52,7 +52,7 @@ const timelineBulletVariants = cva(
     variants: {
       variant: {
         default: "bg-white border-white",
-        active: "border-primary bg-primary text-primary-foreground",
+        active: "border-secondary bg-secondary text-secondary-foreground",
       },
       size: {
         sm: "h-4 w-4",
