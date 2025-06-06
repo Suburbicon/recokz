@@ -2,7 +2,7 @@ import { api } from "@/shared/lib/trpc/client";
 import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Info, ChevronDown, ChevronUp } from "lucide-react";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -10,6 +10,9 @@ export const ImportDocsStepForm = () => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [expandedTransactions, setExpandedTransactions] = useState<Set<string>>(
+    new Set(),
+  );
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
@@ -73,6 +76,17 @@ export const ImportDocsStepForm = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedDocument(null);
+    setExpandedTransactions(new Set());
+  };
+
+  const toggleTransactionMeta = (transactionId: string) => {
+    const newExpanded = new Set(expandedTransactions);
+    if (newExpanded.has(transactionId)) {
+      newExpanded.delete(transactionId);
+    } else {
+      newExpanded.add(transactionId);
+    }
+    setExpandedTransactions(newExpanded);
   };
 
   const { mutate, isPending } = api.reports.update.useMutation({
@@ -326,24 +340,76 @@ export const ImportDocsStepForm = () => {
                     (transaction: any, index: number) => (
                       <div
                         key={transaction.id || index}
-                        className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                        className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {formatDate(transaction.date)}
-                            </span>
-                            <span
-                              className={`font-medium ${
-                                transaction.amount >= 0
-                                  ? "text-green-600 dark:text-green-400"
-                                  : "text-red-600 dark:text-red-400"
-                              }`}
+                        <div className="flex items-center justify-between py-3 px-4">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {formatDate(transaction.date)}
+                              </span>
+                              <span
+                                className={`font-medium ${
+                                  transaction.amount >= 0
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-red-600 dark:text-red-400"
+                                }`}
+                              >
+                                {formatBalance(transaction.amount)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() =>
+                                toggleTransactionMeta(transaction.id)
+                              }
+                              className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                              title="Показать метаданные"
                             >
-                              {formatBalance(transaction.amount)}
-                            </span>
+                              {expandedTransactions.has(transaction.id) ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </button>
                           </div>
                         </div>
+                        {expandedTransactions.has(transaction.id) && (
+                          <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-600">
+                            <div className="pt-3">
+                              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Метаданные:
+                              </h4>
+                              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                                {transaction.meta &&
+                                typeof transaction.meta === "object" ? (
+                                  Object.entries(transaction.meta).map(
+                                    ([key, value]) => (
+                                      <div
+                                        key={key}
+                                        className="flex justify-between items-start"
+                                      >
+                                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                          {key}:
+                                        </span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                                          {typeof value === "object"
+                                            ? JSON.stringify(value)
+                                            : String(value)}
+                                        </span>
+                                      </div>
+                                    ),
+                                  )
+                                ) : (
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Нет доступных метаданных
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ),
                   )}
