@@ -3,6 +3,13 @@ import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
 import { Eye, Info, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/ui/dialog";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -74,9 +81,15 @@ export const ImportDocsStepForm = () => {
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedDocument(null);
     setExpandedTransactions(new Set());
+  };
+
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      setSelectedDocument(null);
+      setExpandedTransactions(new Set());
+    }
   };
 
   const toggleTransactionMeta = (transactionId: string) => {
@@ -307,134 +320,115 @@ export const ImportDocsStepForm = () => {
       )}
 
       {/* Transactions Modal */}
-      {isModalOpen && selectedDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Транзакции: {selectedDocument.name}
-              </h3>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {selectedDocument.transactions.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedDocument.transactions.map(
-                    (transaction: any, index: number) => (
-                      <div
-                        key={transaction.id || index}
-                        className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between py-3 px-4">
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {formatDate(transaction.date)}
-                              </span>
-                              <span
-                                className={`font-medium ${
-                                  transaction.amount >= 0
-                                    ? "text-green-600 dark:text-green-400"
-                                    : "text-red-600 dark:text-red-400"
-                                }`}
-                              >
-                                {formatBalance(transaction.amount)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() =>
-                                toggleTransactionMeta(transaction.id)
-                              }
-                              className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
-                              title="Показать метаданные"
+      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Транзакции: {selectedDocument?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
+            {selectedDocument?.transactions.length > 0 ? (
+              <div className="space-y-3">
+                {selectedDocument.transactions.map(
+                  (transaction: any, index: number) => (
+                    <div
+                      key={transaction.id || index}
+                      className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between py-3 px-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {formatDate(transaction.date)}
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                transaction.amount >= 0
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
+                              }`}
                             >
-                              {expandedTransactions.has(transaction.id) ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </button>
+                              {formatBalance(transaction.amount)}
+                            </span>
                           </div>
                         </div>
-                        {expandedTransactions.has(transaction.id) && (
-                          <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-600">
-                            <div className="pt-3">
-                              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Метаданные:
-                              </h4>
-                              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                                {transaction.meta &&
-                                typeof transaction.meta === "object" ? (
-                                  Object.entries(transaction.meta).map(
-                                    ([key, value]) => (
-                                      <div
-                                        key={key}
-                                        className="flex justify-between items-start"
-                                      >
-                                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                          {key}:
-                                        </span>
-                                        <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
-                                          {typeof value === "object"
-                                            ? JSON.stringify(value)
-                                            : String(value)}
-                                        </span>
-                                      </div>
-                                    ),
-                                  )
-                                ) : (
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Нет доступных метаданных
-                                  </p>
-                                )}
-                              </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              toggleTransactionMeta(transaction.id)
+                            }
+                            className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                            title="Показать метаданные"
+                          >
+                            {expandedTransactions.has(transaction.id) ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      {expandedTransactions.has(transaction.id) && (
+                        <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-600">
+                          <div className="pt-3">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Метаданные:
+                            </h4>
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                              {transaction.meta &&
+                              typeof transaction.meta === "object" ? (
+                                Object.entries(transaction.meta).map(
+                                  ([key, value]) => (
+                                    <div
+                                      key={key}
+                                      className="flex justify-between items-start"
+                                    >
+                                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                        {key}:
+                                      </span>
+                                      <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                                        {typeof value === "object"
+                                          ? JSON.stringify(value)
+                                          : String(value)}
+                                      </span>
+                                    </div>
+                                  ),
+                                )
+                              ) : (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  Нет доступных метаданных
+                                </p>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ),
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    В этом документе нет транзакций
-                  </p>
-                </div>
-              )}
-            </div>
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Всего транзакций: {selectedDocument.transactions.length}
-                </span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  Общий баланс: {formatBalance(selectedDocument.balance)}
-                </span>
+                        </div>
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  В этом документе нет транзакций
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <div className="flex justify-between items-center w-full">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Всего транзакций: {selectedDocument?.transactions.length || 0}
+              </span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                Общий баланс:{" "}
+                {selectedDocument
+                  ? formatBalance(selectedDocument.balance)
+                  : ""}
+              </span>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
