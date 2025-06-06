@@ -65,12 +65,8 @@ model Document {
 }
 
 enum DocumentType {
-  kaspi
-  kaspi_sales
-  kaspi_statement
-  halyk
-  halyk_statement
-  moysklad
+  bank
+  crm
 }
 
 model Transaction {

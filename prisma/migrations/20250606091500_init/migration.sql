@@ -2,7 +2,7 @@
 CREATE TYPE "ReportStatus" AS ENUM ('import_info', 'import_bank', 'import_crm', 'sales', 'expenses', 'done');
 
 -- CreateEnum
-CREATE TYPE "DocumentType" AS ENUM ('kaspi', 'kaspi_sales', 'kaspi_statement', 'halyk', 'halyk_statement', 'moysklad');
+CREATE TYPE "DocumentType" AS ENUM ('bank', 'crm');
 
 -- CreateEnum
 CREATE TYPE "TransactionCategory" AS ENUM ('income', 'expense');

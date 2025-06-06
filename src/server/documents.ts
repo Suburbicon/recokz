@@ -6,6 +6,8 @@ import { parse } from "@/shared/lib/parse";
 import { ai } from "@/server/ai";
 import { parseDateTime } from "@/shared/lib/parse-date-time";
 import { parseAmount } from "@/shared/lib/amount";
+import dayjs from "dayjs";
+import { DocumentType } from "@prisma/client";
 
 export const documentsRouter = createTRPCRouter({
   parse: protectedProcedure
@@ -54,6 +56,8 @@ export const documentsRouter = createTRPCRouter({
           });
         }
 
+        const date = report.startDate;
+
         let fileBuffer: Buffer;
         try {
           fileBuffer = Buffer.from(input.fileContent, "base64");
@@ -77,18 +81,17 @@ export const documentsRouter = createTRPCRouter({
         }
 
         const rows = await parse(fileBuffer);
+
+        console.log("rows", rows);
+
         const previewRows = rows.slice(0, 20);
 
         const startRow = await ai.detectTableStartRow(previewRows);
         const bank = await ai.detectBank(input.fileName);
 
         const headerRow = rows[startRow];
-        const exampleDataRow = [rows[startRow + 1], rows[startRow + 2]];
-        const dataRow = rows[startRow + 1];
 
         const columnsMap = await ai.detectTableColumns(headerRow);
-
-        console.log("columnsMap", columnsMap);
 
         const data = rows.reduce<
           {
@@ -112,6 +115,11 @@ export const documentsRouter = createTRPCRouter({
           );
 
           if (!parsedDate) return acc;
+
+          if (
+            parsedDate.format("YYYY-MM-DD") !== dayjs(date).format("YYYY-MM-DD")
+          )
+            return acc;
 
           const amount = parseAmount(
             row,
@@ -141,14 +149,60 @@ export const documentsRouter = createTRPCRouter({
           return acc;
         }, []);
 
+        // Calculate total balance from transactions
+        const totalBalance = data.reduce(
+          (sum, transaction) => sum + transaction.amount,
+          0,
+        );
+
+        // Convert balance to kopecks (smallest currency unit)
+        const balanceInKopecks = Math.round(totalBalance * 100);
+
+        // Step 1: Save document to database
+        const document = await ctx.prisma.document.create({
+          data: {
+            name: input.fileName,
+            balance: balanceInKopecks,
+            link: `uploads/${input.reportId}/${input.fileName}`, // Could be updated to actual file storage path
+            type: "bank",
+            reportId: input.reportId,
+          },
+        });
+
+        // Step 2: Save transactions to database
+        const transactionsData = data.map((transaction) => {
+          // Convert amount to kopecks (smallest currency unit)
+          const amountInKopecks = Math.round(transaction.amount * 100);
+
+          return {
+            amount: amountInKopecks,
+            date: new Date(transaction.date),
+            meta: transaction.meta, // Prisma will automatically handle JSON serialization
+            documentId: document.id,
+          };
+        });
+
+        // Execute batch transaction creation
+        const batchResult = await ctx.prisma.transaction.createMany({
+          data: transactionsData,
+        });
+
         return {
           success: true,
-          message: "Файл успешно получен и проверен",
+          message: "Файл успешно обработан и сохранен в базу данных",
           fileName: input.fileName,
           fileSize: input.fileSize,
           mimeType: input.mimeType,
           bufferSize: fileBuffer.length,
-          data,
+          documentId: document.id,
+          documentType: DocumentType.bank,
+          transactionsCount: batchResult.count,
+          totalBalance: totalBalance,
+          balanceInKopecks: balanceInKopecks,
+          data: data.map((transaction) => ({
+            date: transaction.date,
+            amount: transaction.amount,
+          })),
         };
       } catch (error) {
         console.error("Error processing file:", error);

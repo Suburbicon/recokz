@@ -2,20 +2,40 @@ import { api } from "@/shared/lib/trpc/client";
 import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
+import { Eye } from "lucide-react";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
   const utils = api.useUtils();
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
   });
 
+  const { data: documents, isLoading: isLoadingDocuments } =
+    api.documents.getAll.useQuery({
+      reportId: params.id,
+    });
+
   const { mutateAsync: parseDocument, isPending: isParsing } =
     api.documents.parse.useMutation({
       onSuccess: (data) => {
         console.log(data);
+        // Invalidate documents query to refresh the list
+        utils.documents.getAll.invalidate({ reportId: params.id });
+        // Clear uploaded files after successful parse
+        setUploadedFiles([]);
+      },
+    });
+
+  const { mutateAsync: deleteDocument, isPending: isDeleting } =
+    api.documents.delete.useMutation({
+      onSuccess: () => {
+        // Invalidate documents query to refresh the list
+        utils.documents.getAll.invalidate({ reportId: params.id });
       },
     });
 
@@ -37,6 +57,24 @@ export const ImportDocsStepForm = () => {
     }
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    try {
+      await deleteDocument({ id: documentId });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleViewTransactions = (document: any) => {
+    setSelectedDocument(document);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedDocument(null);
+  };
+
   const { mutate, isPending } = api.reports.update.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
@@ -50,19 +88,34 @@ export const ImportDocsStepForm = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "application/pdf": [".pdf"],
-      "image/*": [".jpeg", ".jpg", ".png"],
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
         ".xlsx",
       ],
       "application/vnd.ms-excel": [".xls"],
-      "text/csv": [".csv"],
     },
     multiple: true,
   });
 
   const removeFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const formatBalance = (balanceInKopecks: number) => {
+    return (balanceInKopecks / 100).toLocaleString("ru-RU", {
+      style: "currency",
+      currency: "KZT",
+      minimumFractionDigits: 2,
+    });
+  };
+
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleDateString("ru-RU", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -134,11 +187,186 @@ export const ImportDocsStepForm = () => {
         <div className="flex justify-end">
           <button
             onClick={handleParse}
-            disabled={isPending}
+            disabled={isParsing}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPending ? "Загрузка..." : "Загрузить файлы"}
+            {isParsing ? "Обработка..." : "Обработать файлы"}
           </button>
+        </div>
+      )}
+
+      {/* Downloaded documents list */}
+      {isLoadingDocuments ? (
+        <div className="text-center py-4">
+          <p className="text-gray-500 dark:text-gray-400">
+            Загрузка документов...
+          </p>
+        </div>
+      ) : documents && documents.length > 0 ? (
+        <div>
+          <h3 className="text-lg font-medium mb-3">Обработанные документы:</h3>
+          <div className="space-y-3">
+            {documents.map((document) => (
+              <div
+                key={document.id}
+                className="flex items-center justify-between py-4 pl-4 pr-6 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-green-600 dark:text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {document.name}
+                    </p>
+                    <div className="flex items-center space-x-4 mt-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Баланс: {formatBalance(document.balance)}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Транзакций: {document.transactions.length}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Тип: {document.type === "bank" ? "Банк" : "CRM"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleViewTransactions(document)}
+                    className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                    title="Просмотреть транзакции"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteDocument(document.id)}
+                    disabled={isDeleting}
+                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? "Удаление..." : "Удалить"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <div className="text-gray-400 dark:text-gray-500">
+            <svg
+              className="w-12 h-12 mx-auto mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <p className="text-gray-500 dark:text-gray-400">
+              Нет обработанных документов
+            </p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+              Загрузите и обработайте файлы для их отображения здесь
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Transactions Modal */}
+      {isModalOpen && selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Транзакции: {selectedDocument.name}
+              </h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {selectedDocument.transactions.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedDocument.transactions.map(
+                    (transaction: any, index: number) => (
+                      <div
+                        key={transaction.id || index}
+                        className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {formatDate(transaction.date)}
+                            </span>
+                            <span
+                              className={`font-medium ${
+                                transaction.amount >= 0
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
+                              }`}
+                            >
+                              {formatBalance(transaction.amount)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    В этом документе нет транзакций
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Всего транзакций: {selectedDocument.transactions.length}
+                </span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  Общий баланс: {formatBalance(selectedDocument.balance)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
