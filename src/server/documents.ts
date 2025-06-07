@@ -81,6 +81,7 @@ export const documentsRouter = createTRPCRouter({
         }
 
         const rows = await parse(fileBuffer);
+
         const previewRows = rows.slice(0, 20);
 
         const startRow = await ai.detectTableStartRow(previewRows);
@@ -89,6 +90,8 @@ export const documentsRouter = createTRPCRouter({
         const headerRow = rows[startRow];
 
         const columnsMap = await ai.detectTableColumns(headerRow);
+
+        console.log("columnsMap", columnsMap);
 
         const data = rows.reduce<
           {

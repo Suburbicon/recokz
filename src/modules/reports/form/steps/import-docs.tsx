@@ -28,10 +28,6 @@ export const ImportDocsStepForm = () => {
     new Set(),
   );
 
-  const { data: report, isLoading } = api.reports.getById.useQuery({
-    id: params.id,
-  });
-
   const { data: documents, isLoading: isLoadingDocuments } =
     api.documents.getAll.useQuery({
       reportId: params.id,
@@ -61,6 +57,28 @@ export const ImportDocsStepForm = () => {
       onSuccess: () => {
         // Invalidate documents query to refresh the list
         utils.documents.getAll.invalidate({ reportId: params.id });
+      },
+    });
+
+  const { mutateAsync: updateReport } = api.reports.update.useMutation({
+    onSuccess: () => {
+      utils.reports.getById.invalidate({ id: params.id });
+    },
+  });
+
+  const { mutateAsync: reconcile, isPending: isReconciling } =
+    api.reconciliation.reconcile.useMutation({
+      onSuccess: async (data) => {
+        console.log(data);
+        // Update report status to sales and invalidate report
+        try {
+          await updateReport({
+            id: params.id,
+            status: "sales",
+          });
+        } catch (error) {
+          console.error("Failed to update report status:", error);
+        }
       },
     });
 
@@ -117,12 +135,6 @@ export const ImportDocsStepForm = () => {
     setExpandedTransactions(newExpanded);
   };
 
-  const { mutate, isPending } = api.reports.update.useMutation({
-    onSuccess: () => {
-      utils.reports.getById.invalidate({ id: params.id });
-    },
-  });
-
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setUploadedFiles((prev) => [...prev, ...acceptedFiles]);
   }, []);
@@ -169,6 +181,14 @@ export const ImportDocsStepForm = () => {
         id: documentId,
         type: newType,
       });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleReconcile = async () => {
+    try {
+      await reconcile({ reportId: params.id });
     } catch (error) {
       console.error(error);
     }
@@ -326,6 +346,15 @@ export const ImportDocsStepForm = () => {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleReconcile}
+              disabled={isReconciling}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isReconciling ? "Сверка..." : "Сверить"}
+            </button>
           </div>
         </div>
       ) : (

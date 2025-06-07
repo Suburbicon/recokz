@@ -10,6 +10,8 @@ const PROMPT = `
     3. Amount — "Сумма операции", "Сумма к зачислению/ списанию (т)", "Итого", "Дебет", "Кредит" or other words with the same meaning, if there are several, prioritize them with the most appropriate one at the beginning.
     4. IsIncome — default is true, if it is called "Дебет" it is false.
 
+    If there is only one time column, always set it to date and leave time empty, date should not be empty and time should have a value.
+    
     Respond in this JSON format: \{ "date": <column index>, "time": <column index>, "amount": <column index> or <column index[]>, isIncome: boolean or boolean[] }\
     
     Don't write comments.

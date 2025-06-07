@@ -12,6 +12,9 @@ import { ReportStatus } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { ImportInfoStepForm } from "./steps/import-info";
 import { ImportDocsStepForm } from "./steps/import-docs";
+import { ImportSales } from "./steps/import-sales";
+import { ImportExpenses } from "./steps/import-expenses";
+import { ResultTable } from "./steps/import-result";
 
 export function ReportsForm() {
   const params = useParams();
@@ -89,7 +92,7 @@ export function ReportsForm() {
           >
             <AccordionTrigger>Продажи</AccordionTrigger>
             <AccordionContent>
-              {/* SalesForm will be implemented later */}
+              <ImportSales />
             </AccordionContent>
           </AccordionItem>
 
@@ -100,7 +103,7 @@ export function ReportsForm() {
           >
             <AccordionTrigger>Расходы</AccordionTrigger>
             <AccordionContent>
-              {/* ExpensesForm will be implemented later */}
+              <ImportExpenses />
             </AccordionContent>
           </AccordionItem>
 
@@ -111,7 +114,7 @@ export function ReportsForm() {
           >
             <AccordionTrigger>Итог</AccordionTrigger>
             <AccordionContent>
-              {/* ResultTable will be implemented later */}
+              <ResultTable />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
