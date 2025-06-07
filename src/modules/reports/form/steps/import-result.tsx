@@ -53,11 +53,17 @@ export function ResultTable() {
   const bankDocuments =
     report.documents?.filter((document) => document.type === "bank") || [];
 
-  // Calculate balances
+  // Calculate balances - include cash balance from report
   const totalStartBalance = bankDocuments.reduce(
     (sum, doc) => sum + doc.balance,
     0,
   );
+
+  // Cash balance from report (converted from kopecks to display format)
+  const reportCashBalance = report.cashBalance || 0;
+
+  // Total starting balance including cash
+  const totalStartBalanceWithCash = totalStartBalance + reportCashBalance;
 
   // Calculate income and expenses from reconciliations
   const totalIncome =
@@ -94,7 +100,10 @@ export function ResultTable() {
         return sum + Math.abs(amount);
       }, 0) || 0;
 
-  const totalEndBalance = totalStartBalance + totalIncome - totalExpenses;
+  // Calculate end balances
+  const totalEndBalance =
+    totalStartBalanceWithCash + totalIncome - totalExpenses;
+  const reportEndCashBalance = reportCashBalance; // Assuming cash doesn't change through bank transactions
 
   // Group reconciliations by transaction type for detailed breakdown
   const incomeByType: Record<string, number> = {};
@@ -127,7 +136,7 @@ export function ResultTable() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatBalance(totalStartBalance)}
+              {formatBalance(totalStartBalanceWithCash)}
             </div>
           </CardContent>
         </Card>
@@ -183,9 +192,11 @@ export function ResultTable() {
                   {formatBalance(document.balance)}
                 </TableCell>
               ))}
-              <TableCell className="text-right">{formatBalance(0)}</TableCell>
+              <TableCell className="text-right">
+                {formatBalance(reportCashBalance)}
+              </TableCell>
               <TableCell className="text-right font-medium">
-                {formatBalance(totalStartBalance)}
+                {formatBalance(totalStartBalanceWithCash)}
               </TableCell>
             </TableRow>
 
@@ -383,7 +394,7 @@ export function ResultTable() {
                 );
               })}
               <TableCell className="text-right font-bold">
-                {formatBalance(0)}
+                {formatBalance(reportEndCashBalance)}
               </TableCell>
               <TableCell className="text-right font-bold">
                 {formatBalance(totalEndBalance)}

@@ -91,8 +91,6 @@ export const documentsRouter = createTRPCRouter({
 
         const columnsMap = await ai.detectTableColumns(headerRow);
 
-        console.log("columnsMap", columnsMap);
-
         const data = rows.reduce<
           {
             date: string;
@@ -155,14 +153,11 @@ export const documentsRouter = createTRPCRouter({
           0,
         );
 
-        // Convert balance to kopecks (smallest currency unit)
-        const balanceInKopecks = Math.round(totalBalance * 100);
-
         // Step 1: Save document to database
         const document = await ctx.prisma.document.create({
           data: {
             name: input.fileName,
-            balance: balanceInKopecks,
+            balance: 0,
             link: `uploads/${input.reportId}/${input.fileName}`, // Could be updated to actual file storage path
             type: "bank",
             reportId: input.reportId,
@@ -198,7 +193,6 @@ export const documentsRouter = createTRPCRouter({
           documentType: DocumentType.bank,
           transactionsCount: batchResult.count,
           totalBalance: totalBalance,
-          balanceInKopecks: balanceInKopecks,
           data: data.map((transaction) => ({
             date: transaction.date,
             amount: transaction.amount,
@@ -282,6 +276,7 @@ export const documentsRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         type: z.enum(["bank", "crm"]).optional(),
+        balance: z.number().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

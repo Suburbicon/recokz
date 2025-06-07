@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Input } from "@/shared/ui/input";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -27,6 +28,9 @@ export const ImportDocsStepForm = () => {
   const [expandedTransactions, setExpandedTransactions] = useState<Set<string>>(
     new Set(),
   );
+  const [documentCashBalances, setDocumentCashBalances] = useState<
+    Record<string, number>
+  >({});
 
   const { data: documents, isLoading: isLoadingDocuments } =
     api.documents.getAll.useQuery({
@@ -103,6 +107,12 @@ export const ImportDocsStepForm = () => {
   const handleDeleteDocument = async (documentId: string) => {
     try {
       await deleteDocument({ id: documentId });
+      // Remove from local state
+      setDocumentCashBalances((prev) => {
+        const newState = { ...prev };
+        delete newState[documentId];
+        return newState;
+      });
     } catch (error) {
       console.error(error);
     }
@@ -181,8 +191,39 @@ export const ImportDocsStepForm = () => {
         id: documentId,
         type: newType,
       });
+
+      // If changing from bank to CRM, remove cash balance from state
+      if (newType === "crm") {
+        setDocumentCashBalances((prev) => {
+          const newState = { ...prev };
+          delete newState[documentId];
+          return newState;
+        });
+      }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleCashBalanceChange = (documentId: string, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setDocumentCashBalances((prev) => ({
+      ...prev,
+      [documentId]: numValue,
+    }));
+  };
+
+  const handleCashBalanceBlur = async (documentId: string) => {
+    const cashBalance = documentCashBalances[documentId] || 0;
+    try {
+      // update cash balance, it is balance field in db, it is kopecks
+      const balanceInKopecks = Math.round(cashBalance * 100);
+      await updateDocument({
+        id: documentId,
+        balance: balanceInKopecks,
+      });
+    } catch (error) {
+      console.error("Failed to update cash balance:", error);
     }
   };
 
@@ -285,65 +326,99 @@ export const ImportDocsStepForm = () => {
             {documents.map((document) => (
               <div
                 key={document.id}
-                className="flex items-center justify-between py-4 pl-4 pr-6 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
+                className="py-4 pl-4 pr-6 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
               >
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {document.name}
-                    </p>
-                    <div className="flex items-center space-x-8 mt-1">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Баланс: {formatBalance(document.balance)}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {document.name}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Транзакций: {document.transactions.length}
-                      </p>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                        Тип:
-                        <Select
-                          value={document.type}
-                          onValueChange={(value) =>
-                            handleDocumentTypeChange(
-                              document.id,
-                              value as "bank" | "crm",
-                            )
-                          }
-                          disabled={isUpdating}
-                        >
-                          <SelectTrigger className="w-20 h-6 text-xs ml-1 inline-flex">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bank">Банк</SelectItem>
-                            <SelectItem value="crm">CRM</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex items-center space-x-8 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Баланс: {formatBalance(document.balance)}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Транзакций: {document.transactions.length}
+                        </p>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                          Тип:
+                          <Select
+                            value={document.type}
+                            onValueChange={(value) =>
+                              handleDocumentTypeChange(
+                                document.id,
+                                value as "bank" | "crm",
+                              )
+                            }
+                            disabled={isUpdating}
+                          >
+                            <SelectTrigger className="w-20 h-6 text-xs ml-1 inline-flex">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bank">Банк</SelectItem>
+                              <SelectItem value="crm">CRM</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleViewTransactions(document)}
+                      className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                      title="Просмотреть транзакции"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteDocument(document.id)}
+                      disabled={isDeleting}
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isDeleting ? "Удаление..." : "Удалить"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleViewTransactions(document)}
-                    className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
-                    title="Просмотреть транзакции"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteDocument(document.id)}
-                    disabled={isDeleting}
-                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isDeleting ? "Удаление..." : "Удалить"}
-                  </button>
-                </div>
+
+                {/* Initial Cash Input for Bank Documents */}
+                {document.type === "bank" && (
+                  <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
+                    <div className="flex items-center space-x-4">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                        Начальный остаток наличных:
+                      </label>
+                      <div className="flex-1 max-w-xs">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={documentCashBalances[document.id] || ""}
+                          onChange={(e) =>
+                            handleCashBalanceChange(document.id, e.target.value)
+                          }
+                          onBlur={() => handleCashBalanceBlur(document.id)}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        ₸
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-0">
+                      Укажите сумму наличных средств на начало периода для этого
+                      банковского счета
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

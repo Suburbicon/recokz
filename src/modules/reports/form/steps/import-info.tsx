@@ -9,6 +9,7 @@ import { api } from "@/shared/lib/trpc/client";
 import { ReportStatus } from "@prisma/client";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 import { CalendarIcon } from "lucide-react";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
@@ -20,6 +21,9 @@ dayjs.locale("ru");
 
 export const formSchema = z.object({
   date: z.date({ message: "Обязательное поле" }),
+  cashBalance: z
+    .number({ message: "Обязательное поле" })
+    .min(0, "Значение должно быть положительным"),
 });
 
 type SchemaType = z.infer<typeof formSchema>;
@@ -42,6 +46,7 @@ export const ImportInfoStepForm = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date(),
+      cashBalance: 0,
     },
   });
 
@@ -49,6 +54,7 @@ export const ImportInfoStepForm = () => {
     if (report) {
       form.reset({
         date: new Date(report.startDate),
+        cashBalance: report.cashBalance / 100, // Convert from kopecks to tenge
       });
     }
   }, [report, form]);
@@ -59,6 +65,7 @@ export const ImportInfoStepForm = () => {
     mutate({
       id: params.id,
       date: values.date.toISOString(),
+      cashBalance: Math.round(values.cashBalance * 100), // Convert to kopecks
       status:
         report.status === ReportStatus.import_info
           ? ReportStatus.import_bank
@@ -67,11 +74,7 @@ export const ImportInfoStepForm = () => {
   };
 
   if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="h-[146px] animate-pulse bg-muted rounded-md" />
-      </Card>
-    );
+    return <div />;
   }
 
   return (
@@ -111,6 +114,32 @@ export const ImportInfoStepForm = () => {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-[1fr,2fr] gap-4 items-center">
+            <div className="rounded-lg">
+              <p className="text-sm font-medium">Остаток наличных</p>
+              <p className="text-xs text-gray-500 mt-1">
+                На начало периода (в тенге)
+              </p>
+            </div>
+            <div>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                {...form.register("cashBalance", { valueAsNumber: true })}
+                className={cn(
+                  form.formState.errors.cashBalance && "border-red-500",
+                )}
+              />
+              {form.formState.errors.cashBalance && (
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.cashBalance.message}
+                </p>
+              )}
             </div>
           </div>
 
