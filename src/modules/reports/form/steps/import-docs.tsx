@@ -2,7 +2,7 @@ import { api } from "@/shared/lib/trpc/client";
 import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import { useCallback, useState } from "react";
-import { Eye, Info, ChevronDown, ChevronUp } from "lucide-react";
+import { Eye, Info, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -43,6 +50,14 @@ export const ImportDocsStepForm = () => {
 
   const { mutateAsync: deleteDocument, isPending: isDeleting } =
     api.documents.delete.useMutation({
+      onSuccess: () => {
+        // Invalidate documents query to refresh the list
+        utils.documents.getAll.invalidate({ reportId: params.id });
+      },
+    });
+
+  const { mutateAsync: updateDocument, isPending: isUpdating } =
+    api.documents.update.useMutation({
       onSuccess: () => {
         // Invalidate documents query to refresh the list
         utils.documents.getAll.invalidate({ reportId: params.id });
@@ -145,6 +160,20 @@ export const ImportDocsStepForm = () => {
     });
   };
 
+  const handleDocumentTypeChange = async (
+    documentId: string,
+    newType: "bank" | "crm",
+  ) => {
+    try {
+      await updateDocument({
+        id: documentId,
+        type: newType,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -241,35 +270,41 @@ export const ImportDocsStepForm = () => {
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-green-600 dark:text-green-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                      <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
                       {document.name}
                     </p>
-                    <div className="flex items-center space-x-4 mt-1">
+                    <div className="flex items-center space-x-8 mt-1">
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Баланс: {formatBalance(document.balance)}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Транзакций: {document.transactions.length}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Тип: {document.type === "bank" ? "Банк" : "CRM"}
-                      </p>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                        Тип:
+                        <Select
+                          value={document.type}
+                          onValueChange={(value) =>
+                            handleDocumentTypeChange(
+                              document.id,
+                              value as "bank" | "crm",
+                            )
+                          }
+                          disabled={isUpdating}
+                        >
+                          <SelectTrigger className="w-20 h-6 text-xs ml-1 inline-flex">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bank">Банк</SelectItem>
+                            <SelectItem value="crm">CRM</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -296,19 +331,7 @@ export const ImportDocsStepForm = () => {
       ) : (
         <div className="text-center py-8">
           <div className="text-gray-400 dark:text-gray-500">
-            <svg
-              className="w-12 h-12 mx-auto mb-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+            <FileText className="w-12 h-12 mx-auto mb-3" />
             <p className="text-gray-500 dark:text-gray-400">
               Нет обработанных документов
             </p>

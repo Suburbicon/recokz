@@ -273,4 +273,25 @@ export const documentsRouter = createTRPCRouter({
         },
       });
     }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        type: z.enum(["bank", "crm"]).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input;
+
+      await ctx.prisma.document.update({
+        where: {
+          id,
+          report: {
+            organizationId: ctx.organizationId,
+          },
+        },
+        data: updates,
+      });
+    }),
 });
