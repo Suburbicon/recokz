@@ -28,6 +28,14 @@ export function ReportsTable() {
   });
   const { data: reports } = api.reports.getAll.useQuery();
 
+  const formatBalance = (balanceInKopecks: number) => {
+    return (balanceInKopecks / 100).toLocaleString("ru-RU", {
+      style: "currency",
+      currency: "KZT",
+      minimumFractionDigits: 2,
+    });
+  };
+
   const allCount = reports?.length || 0;
   let inProgressCount = 0;
   let doneCount = 0;
@@ -73,7 +81,7 @@ export function ReportsTable() {
                 <TableCell>
                   {dayjs(item.startDate).format("DD.MM.YYYY")}
                 </TableCell>
-                <TableCell>{item.cashBalance}</TableCell>
+                <TableCell>{formatBalance(item.cashBalance)}</TableCell>
                 <TableCell>
                   {item.status !== ReportStatus.done ? (
                     <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-sm font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
