@@ -11,17 +11,19 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 
 // Configure dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 
 export function parseDateTime(
   date: string | number,
   time?: string,
   timezone: string = "UTC",
-) {
-  let result: dayjs.Dayjs;
+): dayjs.Dayjs | undefined {
+  let result: dayjs.Dayjs | undefined;
 
   // Case 1: Excel serial number
   if (typeof date === "number") {
@@ -54,8 +56,15 @@ export function parseDateTime(
       }
     }
     // Parse the date part (DD.MM.YYYY)
+    // Parse with explicit format to ensure DD.MM.YYYY interpretation
+    const parsedDate = dayjs(dateStr, "DD.MM.YYYY");
+    if (!parsedDate.isValid()) {
+      console.error("Invalid date format:", dateStr);
+      return;
+    }
+
+    dateStr = parsedDate.format("DD.MM.YYYY");
     const [day, month, year] = dateStr
-      .replaceAll(",", ".")
       .split(".")
       .map((part) => parseInt(part, 10));
 
@@ -79,7 +88,11 @@ export function parseDateTime(
     const isoTime = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
     // Create the date with timezone awareness
-    result = dayjs.tz(`${isoDate}T${isoTime}`, timezone);
+    try {
+      result = dayjs.tz(`${isoDate}T${isoTime}`, timezone);
+    } catch (e) {
+      // console.error("failed convert date in parse-date-time", e);
+    }
   }
 
   return result;

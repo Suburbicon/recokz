@@ -46,7 +46,7 @@ export const ImportSales = () => {
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString("ru-RU", {
+    return new Date(date).toLocaleString("ru-RU", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -173,7 +173,7 @@ export const ImportSales = () => {
     } else if (reconciliation.typeId) {
       return "Сверено";
     } else {
-      return "Частично";
+      return "Не сверено";
     }
   };
 
@@ -218,7 +218,7 @@ export const ImportSales = () => {
       reconciliation.bankTransaction && reconciliation.crmTransaction
         ? "Банк + CRM"
         : reconciliation.bankTransaction
-          ? "Банк"
+          ? reconciliation.bankTransaction.document.name
           : "CRM";
 
     const typeName = getTransactionTypeName(reconciliation.typeId);

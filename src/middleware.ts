@@ -14,7 +14,7 @@ const isPublicRoute = createRouteMatcher([
 
 export default clerkMiddleware(async (auth, request) => {
   const { userId, sessionClaims, redirectToSignIn } = await auth();
-
+  
   if (userId && (isOnboardingRoute(request) || isApiRoute(request))) {
     return NextResponse.next();
   }

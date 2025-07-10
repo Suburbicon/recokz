@@ -7,8 +7,8 @@ const PROMPT = `
     Given the following column headers from a bank transaction table, identify which column refers to:
     1. Date — it can be "Дата операции", "Дата", "Дата валютирования", "Время".
     2. Time — it can be a separate column or can be written together with date.
-    3. Amount — "Сумма операции", "Сумма к зачислению/ списанию (т)", "Итого", "Дебет", "Кредит" or other words with the same meaning, if there are several, prioritize them with the most appropriate one at the beginning.
-    4. IsIncome — default is true, if it is called "Дебет" it is false.
+    3. Amount — "Сумма операции", "Сумма", "Сумма к зачислению/ списанию (т)", "Итого", "Дебет", "Кредит" or other words with the same meaning, if there are several, prioritize them with the most appropriate one at the beginning.
+    4. IsIncome — it is true.
 
     If there is only one time column, always set it to date and leave time empty, date should not be empty and time should have a value.
     

@@ -42,9 +42,9 @@ export function Footer() {
               <Typography size="body-16" color="gray-200">
                 Преимущества
               </Typography>
-              <Typography size="body-16" color="gray-200">
+              {/* <Typography size="body-16" color="gray-200">
                 Отзывы
-              </Typography>
+              </Typography> */}
               <Typography size="body-16" color="gray-200">
                 Тарифы
               </Typography>

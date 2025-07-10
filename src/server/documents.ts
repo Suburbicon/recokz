@@ -7,7 +7,7 @@ import { ai } from "@/server/ai";
 import { parseDateTime } from "@/shared/lib/parse-date-time";
 import { parseAmount } from "@/shared/lib/amount";
 import dayjs from "dayjs";
-import { DocumentType } from "@prisma/client";
+import { DocumentType, Transaction } from "@prisma/client";
 
 export const documentsRouter = createTRPCRouter({
   parse: protectedProcedure
@@ -85,11 +85,14 @@ export const documentsRouter = createTRPCRouter({
         const previewRows = rows.slice(0, 20);
 
         const startRow = await ai.detectTableStartRow(previewRows);
+        console.log("startRow", startRow);
         const bank = await ai.detectBank(input.fileName);
 
         const headerRow = rows[startRow];
+        console.log("headerRow", headerRow);
 
         const columnsMap = await ai.detectTableColumns(headerRow);
+        console.log("columnsMap", columnsMap);
 
         const data = rows.reduce<
           {
@@ -100,7 +103,6 @@ export const documentsRouter = createTRPCRouter({
         >((acc, row, index) => {
           if (index < startRow + 1) return acc;
           if (!row[columnsMap.date]) return acc;
-
           const hasAmount = Array.isArray(columnsMap.amount)
             ? columnsMap.amount.some((idx) => !!row[idx])
             : !!row[columnsMap.amount];
@@ -137,7 +139,7 @@ export const documentsRouter = createTRPCRouter({
                 } else if (i === columnsMap.amount) {
                   meta[headerRow[i]] = amount;
                 } else {
-                  meta[headerRow[i]] = item;
+                  meta[headerRow[i] || "Неопределенное поле"] = item;
                 }
                 return meta;
               },
@@ -157,15 +159,16 @@ export const documentsRouter = createTRPCRouter({
         const document = await ctx.prisma.document.create({
           data: {
             name: input.fileName,
-            balance: 0,
+            balance: totalBalance,
             link: `uploads/${input.reportId}/${input.fileName}`, // Could be updated to actual file storage path
-            type: "bank",
+            type: bank ? "bank" : "crm",
+            bankName: bank,
             reportId: input.reportId,
           },
         });
 
         // Step 2: Save transactions to database
-        const transactionsData = data.map((transaction) => {
+        let transactionsData = data.map((transaction) => {
           // Convert amount to kopecks (smallest currency unit)
           const amountInKopecks = Math.round(transaction.amount * 100);
 
@@ -176,6 +179,38 @@ export const documentsRouter = createTRPCRouter({
             documentId: document.id,
           };
         });
+
+        const formattedBankTransactions: typeof transactionsData = [];
+        console.log("transactionsData", transactionsData);
+        transactionsData.forEach((transaction, idx) => {
+          const findedDouble = transactionsData.find(
+            (innerTransaction, innerIdx) => {
+              if (
+                transaction.amount === innerTransaction.amount &&
+                transaction.date.getTime() ===
+                  innerTransaction.date.getTime() &&
+                idx !== innerIdx
+              ) {
+                return innerTransaction;
+              }
+            },
+          );
+          console.log("findedDouble", findedDouble);
+          if (findedDouble) {
+            console.log("FOUNDEDE");
+            formattedBankTransactions.push({
+              ...transaction,
+              amount: transaction.amount + findedDouble.amount,
+            });
+            transactionsData.splice(idx, 1);
+          } else {
+            formattedBankTransactions.push(transaction);
+          }
+        });
+
+        console.log("formattedBankTransactions", formattedBankTransactions);
+
+        transactionsData = [...formattedBankTransactions];
 
         // Execute batch transaction creation
         const batchResult = await ctx.prisma.transaction.createMany({
@@ -190,7 +225,7 @@ export const documentsRouter = createTRPCRouter({
           mimeType: input.mimeType,
           bufferSize: fileBuffer.length,
           documentId: document.id,
-          documentType: DocumentType.bank,
+          documentType: bank ? DocumentType.bank : DocumentType.crm,
           transactionsCount: batchResult.count,
           totalBalance: totalBalance,
           data: data.map((transaction) => ({

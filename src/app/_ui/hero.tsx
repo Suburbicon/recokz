@@ -77,7 +77,7 @@ export function HeroSection() {
                 />
               </FadeIn>
 
-              <FadeIn
+              {/* <FadeIn
                 delay={0.35}
                 className="border border-white-10 p-6 rounded-xl absolute -bottom-6 -left-41 backdrop-blur-30 bg-linear-(--gradient-1) flex items-center gap-5"
               >
@@ -99,7 +99,7 @@ export function HeroSection() {
                     <br /> бизнесов я доверяю Reco.kz”
                   </Typography>
                 </div>
-              </FadeIn>
+              </FadeIn> */}
             </div>
           </div>
           <div className="lg:hidden block">

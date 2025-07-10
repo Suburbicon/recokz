@@ -23,7 +23,7 @@ export function ReconciliationSidebar() {
     id: params.id as string,
   });
   let timelineStep = 0;
-
+  
   switch (report?.status) {
     case ReportStatus.import_info:
     case ReportStatus.import_bank:

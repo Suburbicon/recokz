@@ -19,6 +19,16 @@ export const organizationRouter = createTRPCRouter({
       });
       return organization;
     }),
+
+  // Add this new mutation to clear organizationId
+  clearOrganization: protectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.clerk.users.updateUserMetadata(ctx.userId, {
+      publicMetadata: {
+        organizationId: null,
+      },
+    });
+    return { success: true };
+  }),
 });
 
 export type OrganizationRouter = typeof organizationRouter;

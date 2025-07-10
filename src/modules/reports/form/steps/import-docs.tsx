@@ -238,7 +238,8 @@ export const ImportDocsStepForm = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Загрузите документы</h2>
+        <h2 className="text-xl font-semibold mb-2">Загрузите документы</h2>
+        <p className="mb-6">Выгрузка с банков и CRM-систем</p>
 
         <div
           {...getRootProps()}
@@ -323,7 +324,7 @@ export const ImportDocsStepForm = () => {
         <div>
           <h3 className="text-lg font-medium mb-3">Обработанные документы:</h3>
           <div className="space-y-3">
-            {documents.map((document) => (
+            {documents.map((document: any) => (
               <div
                 key={document.id}
                 className="py-4 pl-4 pr-6 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg"
@@ -341,7 +342,7 @@ export const ImportDocsStepForm = () => {
                       </p>
                       <div className="flex items-center space-x-8 mt-1">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Баланс: {formatBalance(document.balance)}
+                          Баланс: {formatBalance(document.balance * 100)}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Транзакций: {document.transactions.length}
@@ -549,7 +550,7 @@ export const ImportDocsStepForm = () => {
               <span className="font-medium text-gray-900 dark:text-gray-100">
                 Общий баланс:{" "}
                 {selectedDocument
-                  ? formatBalance(selectedDocument.balance)
+                  ? formatBalance(selectedDocument.balance * 100)
                   : ""}
               </span>
             </div>

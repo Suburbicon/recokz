@@ -38,6 +38,7 @@ CREATE TABLE "documents" (
     "balance" INTEGER NOT NULL,
     "link" TEXT NOT NULL,
     "type" "DocumentType" NOT NULL,
+    "bankName" TEXT,
     "report_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

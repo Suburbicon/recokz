@@ -8,9 +8,8 @@ export const parse = async (buffer: Buffer) => {
     const sheetName = workbook.SheetNames[i];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
-
     // Check if sheet has data (not empty and has at least one non-empty row)
-    if (data && data.length > 0 && data.some((row) => row && row.length > 10)) {
+    if (data && data.length > 0 && data.some((row) => row && row.length > 7)) {
       return data;
     }
   }

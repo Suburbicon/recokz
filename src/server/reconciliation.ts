@@ -2,6 +2,7 @@ import { createTRPCRouter } from "@/shared/lib/trpc/server";
 import { protectedProcedure } from "@/shared/lib/trpc/server";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { Transaction } from "@prisma/client";
 
 export const reconciliationRouter = createTRPCRouter({
   reconcile: protectedProcedure
@@ -32,12 +33,12 @@ export const reconciliationRouter = createTRPCRouter({
 
         // Get bank and CRM transactions
         const bankTransactions = report.documents
-          .filter((doc) => doc.type === "bank")
-          .flatMap((doc) => doc.transactions);
+          .filter((doc: { type: string }) => doc.type === "bank")
+          .flatMap((doc: any) => doc.transactions);
 
         const crmTransactions = report.documents
-          .filter((doc) => doc.type === "crm")
-          .flatMap((doc) => doc.transactions);
+          .filter((doc: { type: string }) => doc.type === "crm")
+          .flatMap((doc: any) => doc.transactions);
 
         // Simple reconciliation logic - match transactions by amount and date
         // This is a basic implementation that can be enhanced with more sophisticated matching
@@ -47,7 +48,7 @@ export const reconciliationRouter = createTRPCRouter({
         // First pass: Find matched transactions
         for (const bankTransaction of bankTransactions) {
           const matchingCrmTransaction = crmTransactions.find(
-            (crmTx) =>
+            (crmTx: any) =>
               crmTx.amount === bankTransaction.amount &&
               Math.abs(
                 new Date(crmTx.date).getTime() -

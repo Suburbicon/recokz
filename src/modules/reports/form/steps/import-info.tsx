@@ -28,7 +28,11 @@ export const formSchema = z.object({
 
 type SchemaType = z.infer<typeof formSchema>;
 
-export const ImportInfoStepForm = () => {
+export const ImportInfoStepForm = ({
+  setCurrentStatus,
+}: {
+  setCurrentStatus: (status: ReportStatus) => void;
+}) => {
   const params = useParams<{ id: string }>();
   const utils = api.useUtils();
 
@@ -39,6 +43,7 @@ export const ImportInfoStepForm = () => {
   const { mutate, isPending } = api.reports.update.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
+      setCurrentStatus(report?.status ?? ReportStatus.import_info);
     },
   });
 
@@ -62,14 +67,15 @@ export const ImportInfoStepForm = () => {
   const handleSubmit = async (values: SchemaType) => {
     if (!report) return;
 
+    const status =
+      report.status === ReportStatus.import_info
+        ? ReportStatus.import_bank
+        : report.status;
     mutate({
       id: params.id,
       date: values.date.toISOString(),
       cashBalance: Math.round(values.cashBalance * 100), // Convert to kopecks
-      status:
-        report.status === ReportStatus.import_info
-          ? ReportStatus.import_bank
-          : report.status,
+      status: status,
     });
   };
 

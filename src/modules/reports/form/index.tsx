@@ -70,7 +70,7 @@ export function ReportsForm() {
           >
             <AccordionTrigger>Информация о сверке</AccordionTrigger>
             <AccordionContent>
-              <ImportInfoStepForm />
+              <ImportInfoStepForm setCurrentStatus={setCurrentStatus} />
             </AccordionContent>
           </AccordionItem>
 
