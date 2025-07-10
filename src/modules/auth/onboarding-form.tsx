@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/shared/lib/trpc/client";
-import { xinValidator } from "@/shared/lib/validators";
+// import { xinValidator } from "@/shared/lib/validators";
 import { InputField } from "@/shared/ui/_fields/input-field";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
@@ -17,7 +17,7 @@ const formSchema = z.object({
   name: z
     .string({ message: "Обязательное поле" })
     .min(4, "Строка должна содержать не менее 4 символов"),
-  xin: xinValidator,
+  // xin: xinValidator,
 });
 
 export function OnboardingForm() {
@@ -28,7 +28,7 @@ export function OnboardingForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      xin: "",
+      // xin: "0",
     },
   });
 
@@ -68,12 +68,12 @@ export function OnboardingForm() {
                 name="name"
                 placeholder="Название организации"
               />
-              <InputField
+              {/* <InputField
                 inputSize="lg"
                 name="xin"
                 placeholder="ИИН"
                 type="text"
-              />
+              /> */}
             </div>
 
             <div className="flex justify-between items-center gap-12">

@@ -4,12 +4,11 @@ import { z } from "zod";
 
 export const organizationRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(z.object({ name: z.string(), xin: z.string() }))
+    .input(z.object({ name: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const organization = await ctx.prisma.organization.create({
         data: {
           name: input.name,
-          xin: input.xin,
         },
       });
       await ctx.clerk.users.updateUserMetadata(ctx.userId, {
