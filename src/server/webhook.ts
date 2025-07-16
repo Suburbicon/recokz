@@ -9,7 +9,7 @@ export const webhookRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // input — это любой JSON-объект
       console.log(input);
-      await ctx.prisma.transaction.createMany({
+      await ctx.prisma.transaction.create({
         data: {
           amount: 100,
           date: new Date(),
