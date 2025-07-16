@@ -57,7 +57,17 @@ export function parseDateTime(
     }
     // Parse the date part (DD.MM.YYYY)
     // Parse with explicit format to ensure DD.MM.YYYY interpretation
-    const parsedDate = dayjs(dateStr, "DD.MM.YYYY");
+    const possibleFormats = [
+      "YYYY-MM-DD",
+      "DD-MM-YYYY",
+      "YYYY.MM.DD",
+      "DD.MM.YYYY",
+      "DD/MM/YYYY",
+      "YYYY/MM/DD",
+      "M/D/YYYY", // Форматы без ведущих нулей
+      "D.M.YYYY"
+    ];
+    const parsedDate = dayjs(dateStr, possibleFormats, true);
     if (!parsedDate.isValid()) {
       console.error("Invalid date format:", dateStr);
       return;

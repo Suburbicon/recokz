@@ -172,6 +172,8 @@ export const ImportSales = () => {
       return "Сверено";
     } else if (reconciliation.typeId) {
       return "Сверено";
+    } else if (reconciliation.crmTransaction?.meta.byCash) {
+      return "Наличными";
     } else {
       return "Не сверено";
     }
@@ -180,6 +182,8 @@ export const ImportSales = () => {
   const getStatusColor = (reconciliation: any) => {
     if (isResolved(reconciliation)) {
       return "text-green-600 dark:text-green-400";
+    } else if (reconciliation.crmTransaction?.meta.byCash) {
+      return "text-blue-600 dark:text-blue-400";
     } else {
       return "text-yellow-600 dark:text-yellow-400";
     }
@@ -191,6 +195,13 @@ export const ImportSales = () => {
         bg: "bg-green-100 dark:bg-green-900/30",
         icon: (
           <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+        ),
+      };
+    } else if (reconciliation.crmTransaction?.meta.byCash) {
+      return {
+        bg: "bg-blue-100 dark:bg-blue-900/30",
+        icon: (
+          <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         ),
       };
     } else {

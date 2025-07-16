@@ -85,24 +85,23 @@ export const documentsRouter = createTRPCRouter({
         const previewRows = rows.slice(0, 20);
 
         const startRow = await ai.detectTableStartRow(previewRows);
-        console.log("startRow", startRow);
+        
         const bank = await ai.detectBank(input.fileName);
 
         const headerRow = rows[startRow];
-        console.log("headerRow", headerRow);
-
+        
         const columnsMap = await ai.detectTableColumns(headerRow);
-        console.log("columnsMap", columnsMap);
-
+        
         const data = rows.reduce<
           {
             date: string;
             amount: number;
-            meta: Record<string, string | number>;
+            meta: Record<string, string | number | boolean>;
           }[]
         >((acc, row, index) => {
           if (index < startRow + 1) return acc;
           if (!row[columnsMap.date]) return acc;
+
           const hasAmount = Array.isArray(columnsMap.amount)
             ? columnsMap.amount.some((idx) => !!row[idx])
             : !!row[columnsMap.amount];
@@ -127,10 +126,12 @@ export const documentsRouter = createTRPCRouter({
             columnsMap.isIncome,
           );
 
+          const byCash = row.join(', ').includes('Наличными');
+          
           acc.push({
             date: parsedDate.toISOString(),
             amount,
-            meta: row.reduce(
+            meta: {...row.reduce(
               (meta, item, i) => {
                 if (i === columnsMap.date) {
                   meta[headerRow[i]] = parsedDate.toISOString();
@@ -145,6 +146,8 @@ export const documentsRouter = createTRPCRouter({
               },
               {} as Record<string, string | number>,
             ),
+            'byCash': byCash
+          },
           });
           return acc;
         }, []);
@@ -181,7 +184,6 @@ export const documentsRouter = createTRPCRouter({
         });
 
         const formattedBankTransactions: typeof transactionsData = [];
-        console.log("transactionsData", transactionsData);
         transactionsData.forEach((transaction, idx) => {
           const findedDouble = transactionsData.find(
             (innerTransaction, innerIdx) => {
@@ -195,9 +197,7 @@ export const documentsRouter = createTRPCRouter({
               }
             },
           );
-          console.log("findedDouble", findedDouble);
           if (findedDouble) {
-            console.log("FOUNDEDE");
             formattedBankTransactions.push({
               ...transaction,
               amount: transaction.amount + findedDouble.amount,
@@ -207,8 +207,6 @@ export const documentsRouter = createTRPCRouter({
             formattedBankTransactions.push(transaction);
           }
         });
-
-        console.log("formattedBankTransactions", formattedBankTransactions);
 
         transactionsData = [...formattedBankTransactions];
 

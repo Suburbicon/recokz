@@ -40,6 +40,8 @@ export const reconciliationRouter = createTRPCRouter({
           .filter((doc: { type: string }) => doc.type === "crm")
           .flatMap((doc: any) => doc.transactions);
 
+        // await reconcileDocs(bankTransactions, crmTransactions);
+
         // Simple reconciliation logic - match transactions by amount and date
         // This is a basic implementation that can be enhanced with more sophisticated matching
         const reconciliations = [];
@@ -65,6 +67,10 @@ export const reconciliationRouter = createTRPCRouter({
               crmTransactionId: matchingCrmTransaction.id,
             });
             matchedCrmTransactionIds.add(matchingCrmTransaction.id);
+            const index = crmTransactions.findIndex(
+              el => el.id === matchingCrmTransaction.id
+            )
+            crmTransactions.splice(index, 1);
           } else {
             // Unmatched bank transaction
             reconciliations.push({

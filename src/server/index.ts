@@ -4,6 +4,7 @@ import { transactionTypeRouter } from "./transaction-type";
 import { reportsRouter } from "./reports";
 import { documentsRouter } from "./documents";
 import { reconciliationRouter } from "./reconciliation";
+import { webhookRouter } from "./webhook";
 
 export const appRouter = createTRPCRouter({
   organization: organizationRouter,
