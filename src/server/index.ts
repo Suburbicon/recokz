@@ -12,6 +12,7 @@ export const appRouter = createTRPCRouter({
   reports: reportsRouter,
   documents: documentsRouter,
   reconciliation: reconciliationRouter,
+  webhook: webhookRouter,
 });
 
 export type AppRouter = typeof appRouter;
