@@ -18,16 +18,18 @@ import { toast } from "sonner";
 import Link from "next/link";
 import LogoWhite from "@/shared/icons/logo-white.svg";
 import { api } from "@/shared/lib/trpc/client";
+import { useClerk } from "@clerk/nextjs";
 
 export function ReportsSidebar() {
   const { user } = useUser();
   const router = useRouter();
+  const { signOut } = useClerk();
 
   const { mutateAsync: clearOrganization } =
     api.organization.clearOrganization.useMutation({
       onSuccess: async () => {
         await user?.reload();
-        router.push("/onboarding");
+        router.push("/sign-in");
       },
       onError: (err) => {
         toast.error(err.message);
@@ -35,7 +37,8 @@ export function ReportsSidebar() {
     });
 
   const handleResetOrganization = async () => {
-    await clearOrganization();
+    await signOut();
+    router.push("/sign-in");
   };
 
   return (
@@ -61,6 +64,22 @@ export function ReportsSidebar() {
                   <Link href="/cabinet/dictionary">
                     <BookOpenIcon />
                     <span>Справочники</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/cabinet/transactions">
+                    <BookOpenIcon />
+                    <span>Транзакции</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/cabinet/connection">
+                    <BookOpenIcon />
+                    <span>POS-Терминал</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

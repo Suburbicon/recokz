@@ -10,7 +10,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
   }
 
   if (sessionClaims) {
-    redirect("/onboarding");
+    redirect("/sign-in");
   }
 
   return <>{children}</>;
