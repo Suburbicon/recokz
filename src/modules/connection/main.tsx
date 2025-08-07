@@ -20,14 +20,13 @@ export const Main = () => {
 
     const connectToPos = async () => {
         try {
-            setIpAddress((prev) => prev + ':8080')
-            const response = await api.get(`https://${ipAddress}/v2/register?name=${kassaName}`)
+            const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
             const storage = new TokenStorage();
             storage.saveToStorage(
                 response.data.data.accessToken,
                 response.data.data.refreshToken,
             )
-            localStorage.setItem('posIpAddress', ipAddress);
+            localStorage.setItem('posIpAddress', ipAddress + ':8080');
             toast.success("Успешно подключено к POS-терминалу");
         }
         catch (error) {
