@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 4000",
+    "dev": "next dev -p 5173",
+    "dev:https": "next dev -p 5173 --experimental-https --experimental-https-key ./certs/key.pem --experimental-https-cert ./certs/cert.pem",
     "dev:turbo": "next dev --turbo -p 4000",
     "build": "prisma generate && next build",
     "start": "next start",

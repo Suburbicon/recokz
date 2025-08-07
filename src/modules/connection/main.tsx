@@ -10,16 +10,25 @@ import { toast } from 'sonner';
 export const Main = () => {
     const [ipAddress, setIpAddress] = useState(""); 
     const [kassaName, setKassaName] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const { user } = useUser();
 
-    if (!user) {
+    if (!user || isLoading) {
         return <div className="p-6">
             <LoaderIcon className='animate-spin' />
         </div>;
     }
 
     const connectToPos = async () => {
+        if (!ipAddress || !kassaName) {
+            toast.error("Пожалуйста, введите IP адрес и имя кассы.");
+            return;
+        }
+
+        setIsLoading(true);
+
         try {
+            // const response = await api.get(`/api/pos/v2/register?name=${kassaName}`)
             const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
             const storage = new TokenStorage();
             storage.saveToStorage(
@@ -32,7 +41,8 @@ export const Main = () => {
         catch (error) {
             toast.error("Произошла ошибка при подключении к POS-терминалу");
             console.error("Error connecting to POS terminal:", error);
-                <span>{`https://reco.kz/webhook/${user?.publicMetadata.organizationId ?? ""}`}</span>
+        } finally {
+            setIsLoading(false);
         }
     };  
 

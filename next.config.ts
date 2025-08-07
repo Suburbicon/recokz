@@ -1,13 +1,23 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        // Путь, который вы будете использовать в вашем фронтенд-коде
+        source: '/api/pos/:path*',
+        // Цель: реальный адрес вашего POS-терминала
+        destination: 'http://192.168.1.128:8080/:path*', 
+      },
+    ]
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "3mb",
     },
   },
   webpack(config) {
-    // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+     
     const fileLoaderRule = config.module.rules.find((rule: any) =>
       rule.test?.test?.(".svg"),
     );
