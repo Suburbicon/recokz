@@ -58,8 +58,8 @@ export function TransactionsTable() {
     setLoading(true);
     try {
       const response = await axiosApi.get(
-        // `http://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
-        `http://localhost:3000/v2/payment?amount=${transaction.amount}`
+        `http://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
+        // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
       );
 
       let status = response.data.data.status;
@@ -68,8 +68,8 @@ export function TransactionsTable() {
       while (status === 'wait') {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         paymentResponse = await axiosApi.get(
-        // `http://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
-        `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
+        `http://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
+        // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
         );
         status = paymentResponse.data.data.status;
       }
