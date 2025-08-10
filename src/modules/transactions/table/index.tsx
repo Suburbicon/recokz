@@ -16,13 +16,27 @@ import { LoaderIcon } from "@/shared/ui/loader";
 import { Transaction } from '@/modules/transactions/model/Transaction';
 import { api as axiosApi } from '@/shared/client'
 import { toast } from 'sonner';
-import { prisma } from '@/shared/lib/prisma';
 import { useUser } from '@clerk/clerk-react';
 
 export function TransactionsTable() {
   const { user } = useUser();
   const [isLoading, setLoading] = useState(false);
   const { data: transactions } = api.crmTransaction.getAll.useQuery() as {data: Transaction[]};
+
+  const { mutateAsync: createBankTransaction } = api.bankTransaction.create.useMutation({
+    onSuccess: () => {
+      toast("Банковская транзакция создалась успешно")
+    },
+    onError: () => {
+      toast("Произошла ошибка с созданием банковской транзакции")
+    }
+  })
+
+  const { mutateAsync: updateCrmTransaction } = api.crmTransaction.update.useMutation({
+    onSuccess: () => {
+      toast("CRM транзакция обновилась успешно")
+    }
+  })
 
   if (!transactions || isLoading || !user) {
     return (
@@ -44,35 +58,39 @@ export function TransactionsTable() {
     setLoading(true);
     try {
       const response = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
+        // `http://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
+        `http://localhost:3000/v2/payment?amount=${transaction.amount}`
       );
 
       let status = response.data.data.status;
       let paymentResponse = response;
 
-      // Polling if status is 'wait'
       while (status === 'wait') {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         paymentResponse = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
+        // `http://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
+        `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
         );
         status = paymentResponse.data.data.status;
       }
 
-      const bankT = await prisma.bankTransaction.create({
-        data: {
-          amount: transaction.amount,
-          date: paymentResponse.data.data.chequeInfo.date,
-          meta: paymentResponse.data,
-          organizationId: user.publicMetadata.organizationId as string,
-          transactionId: paymentResponse.data.data.transactionId
-        }
-      });
-      await prisma.crmTransaction.update({
-        where: { id: transaction.id },
-        data: { bankTransactionId: bankT.id }
+      const bankT = await createBankTransaction({
+        amount: transaction.amount,
+        date: paymentResponse.data.data.chequeInfo.date,
+        meta: paymentResponse.data,
+        organizationId: user.publicMetadata.organizationId as string,
+        transactionId: paymentResponse.data.data.transactionId
       })
+      if (bankT) {
+        await updateCrmTransaction({
+          transactionId: transaction.id,
+          bankTransactionId: bankT.id
+        })
+      } else {
+        throw Error('Произошла ошибка с созданием банковской транзакции')
+      }
     } catch (error) {
+      console.log(error)
       toast.error("Произошла ошибка при отправке платежа");
     }
 

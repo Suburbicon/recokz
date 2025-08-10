@@ -2,15 +2,23 @@ export class TokenStorage {
     constructor() {}
 
     saveToStorage(accessToken: string, refreshToken: string) {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+        }
     }
 
     getRefreshToken() {
-        return localStorage.getItem('refreshToken') || 'not-found';
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('refreshToken') || 'not-found';
+        }
+        return null
     }
 
     getAccessToken() {
-        return localStorage.getItem('accessToken') || 'not-found';
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('accessToken') || 'not-found';
+        }
+        return null
     }
 }
