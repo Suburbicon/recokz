@@ -29,8 +29,8 @@ export const Main = () => {
         setIsLoading(true);
 
         try {
-            // const response = await api.get(`/api/pos/v2/register?name=${kassaName}`)
-            const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
+            const response = await api.get(`/api/pos/v2/register?name=${kassaName}`)
+            // const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
             const storage = new TokenStorage();
             storage.saveToStorage(
                 response.data.data.accessToken,
