@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
         // Путь, который вы будете использовать в вашем фронтенд-коде
         source: '/api/pos/:path*',
         // Цель: реальный адрес вашего POS-терминала
-        destination: 'http://192.168.0.109:8080/:path*', 
+        destination: 'https://192.168.0.109:8080/:path*', 
       },
     ]
   },
