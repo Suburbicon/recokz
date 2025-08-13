@@ -105,6 +105,12 @@ export function TransactionsTable() {
         </div>
       </div>
 
+      {transactions.length === 0 && (
+        <div>
+          У вас нет активных транзакций
+        </div>
+      )}
+
       {transactions && transactions.length > 0 && (
         <Table>
           <TableHeader>

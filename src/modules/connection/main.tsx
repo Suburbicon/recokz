@@ -13,7 +13,6 @@ export const Main = () => {
     const [kassaName, setKassaName] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { user } = useUser();
-    console.log(user)
 
     if (!user || isLoading) {
         return <div className="p-6">
