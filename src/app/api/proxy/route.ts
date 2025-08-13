@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const url = new URL(targetUrl);
-    if (!isValidPublicIp(url.hostname)) {
+    if (isValidPublicIp(url.hostname)) {
         return NextResponse.json({ error: 'Invalid or forbidden IP address' }, { status: 403 });
     }
 

@@ -36,6 +36,10 @@ export const Main = () => {
                 },
                 body: JSON.stringify({ targetUrl: `https://${ipAddress}:8080/v2/register?name=${kassaName}` })
             })
+            if (!response.ok) {
+                const errorData = await response.json(); 
+                throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+            }
             const data = await response.json()
             // const response = await api.post(`/api/pos/v2/register?name=${kassaName}`)
             // const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
