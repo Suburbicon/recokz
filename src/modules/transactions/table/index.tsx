@@ -54,11 +54,56 @@ export function TransactionsTable() {
     });
   };
 
-  const sendPayment = async (transaction: Transaction) => {
+  const sendPaymentHalyk = async (transaction: Transaction) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          targetUrl: `https://${localStorage.getItem('posIpAddressHalyk')}:8080`,
+          targetMethod: 'POST',
+          targetBody: {
+            task: 'purchase',
+            data: {
+              amount: transaction.amount
+            }
+          }
+        })
+      })
+
+      const response_data = await response.json();
+
+      const bankT = await createBankTransaction({
+        amount: transaction.amount,
+        date: response_data.data.dateTime,
+        meta: response_data.data,
+        organizationId: user.publicMetadata.organizationId as string,
+        transactionId: response_data.data.terminalId
+      })
+      if (bankT) {
+        await updateCrmTransaction({
+          transactionId: transaction.id,
+          bankTransactionId: bankT.id
+        })
+      } else {
+        throw Error('Произошла ошибка с созданием банковской транзакции')
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("Произошла ошибка при отправке платежа");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const sendPaymentKaspi = async (transaction: Transaction) => {
     setLoading(true);
     try {
       const response = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
+        `https://${localStorage.getItem('posIpAddressKaspi')}/v2/payment?amount=${transaction.amount}`
         // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
       );
 
@@ -68,7 +113,7 @@ export function TransactionsTable() {
       while (status === 'wait') {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         paymentResponse = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
+        `https://${localStorage.getItem('posIpAddressKaspi')}/v2/status?processId=${response.data.data.processId}`
         // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
         );
         status = paymentResponse.data.data.status;
@@ -117,8 +162,8 @@ export function TransactionsTable() {
             <TableRow>
               <TableHead>Дата</TableHead>
               <TableHead>Сумма</TableHead>
-              <TableHead className="w-[200px]">Описание</TableHead>
-              <TableHead className="w-[100px]"></TableHead>
+              <TableHead>Описание</TableHead>
+              <TableHead className="w-[100px]">Оплатить</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -133,16 +178,25 @@ export function TransactionsTable() {
                     item.meta?.data?.expense.title || "Неизвестно"
                   }
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell>
                   <div className="flex justify-end gap-2">
                     <Button 
-                      className="flex w-full" 
+                      className="flex w-full px-2 bg-red-600 text-white" 
                       variant="default" 
                       size="icon" 
                       asChild
-                      onClick={() => sendPayment(item)}
+                      onClick={() => sendPaymentKaspi(item)}
                     >
-                      <div>Оплатить</div>
+                      <div>Kaspi</div>
+                    </Button>
+                    <Button 
+                      className="flex w-full px-2 bg-green-600 text-white" 
+                      variant="default" 
+                      size="icon" 
+                      asChild
+                      onClick={() => sendPaymentHalyk(item)}
+                    >
+                      <div>Halyk</div>
                     </Button>
                   </div>
                 </TableCell>
