@@ -29,12 +29,20 @@ export const Main = () => {
         setIsLoading(true);
 
         try {
-            const response = await api.get(`/api/pos/v2/register?name=${kassaName}`)
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ targetUrl: `https://${ipAddress}:8080/v2/register?name=${kassaName}` })
+            })
+            const data = await response.json()
+            // const response = await api.post(`/api/pos/v2/register?name=${kassaName}`)
             // const response = await api.get(`https://${ipAddress + ':8080'}/v2/register?name=${kassaName}`)
             const storage = new TokenStorage();
             storage.saveToStorage(
-                response.data.data.accessToken,
-                response.data.data.refreshToken,
+                data.accessToken,
+                data.refreshToken,
             )
             localStorage.setItem('posIpAddress', ipAddress + ':8080');
             toast.success("Успешно подключено к POS-терминалу");
@@ -57,10 +65,10 @@ export const Main = () => {
                     <p>Нужно вставить строку ниже в Altegio</p>
                 </div>
                 <div className='ml-5 space-y-3'>
-                    <span>{`https://reco.kz/webhook/${user?.publicMetadata.organizationId}`}</span>
-                    <Image src='/instructions/first-step.png' alt='first step' width={350} height={200} />
+                    <span>{`https://www.reco.kz/api/webhook/${user?.publicMetadata.organizationId}`}</span>
+                    <Image src='/instructions/first-step.png' alt='first step' width={350} height={150} />
                     <span>Выберите ниже поле &quot;Транзакции&quot; и нажмите &quot;Сохранить&quot;</span>
-                    <Image src='/instructions/first-step-2.png' alt='first step 2' width={350} height={200} />
+                    <Image src='/instructions/first-step-2.png' alt='first step 2' width={350} height={150} />
                 </div>
             </div>
             <div className='flex items-center justify-center space-x-2'>
