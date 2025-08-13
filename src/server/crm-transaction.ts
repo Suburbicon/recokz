@@ -25,6 +25,19 @@ export const crmTransactionRouter = createTRPCRouter({
                 where: { id: input.transactionId },
                 data: { bankTransactionId: input.bankTransactionId }
             })
+        }),
+    retrive: protectedProcedure
+        .input(z.object({
+            id: z.string()
+        }))
+        .query(async ({ctx, input}) => {
+            const transaction = await ctx.prisma.crmTransaction.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    id: input.id
+                }
+            })
+            return transaction;
         })
 })
 

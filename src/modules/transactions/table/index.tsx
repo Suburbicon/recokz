@@ -58,7 +58,7 @@ export function TransactionsTable() {
     setLoading(true);
     try {
       const response = await axiosApi.get(
-        `http://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
+        `https://${localStorage.getItem('posIpAddress')}/v2/payment?amount=${transaction.amount}`
         // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
       );
 
@@ -68,7 +68,7 @@ export function TransactionsTable() {
       while (status === 'wait') {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         paymentResponse = await axiosApi.get(
-        `http://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
+        `https://${localStorage.getItem('posIpAddress')}/v2/status?processId=${response.data.data.processId}`
         // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
         );
         status = paymentResponse.data.data.status;
@@ -101,7 +101,7 @@ export function TransactionsTable() {
     <div className="flex flex-col gap-8 mb-12">
       <div className="flex flex-col gap-4">
         <div>
-          <h1>Транзакции</h1>
+          <h1 className='text-3xl'>Транзакции</h1>
         </div>
       </div>
 

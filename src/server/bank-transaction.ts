@@ -23,6 +23,19 @@ export const bankTransactionRouter = createTRPCRouter({
                 }
             });
             return bankT;
+        }),
+    retrive: protectedProcedure
+        .input(z.object({
+            id: z.string()
+        }))
+        .query(async ({ctx, input}) => {
+            const transaction = await ctx.prisma.bankTransaction.findFirst({
+                where: {
+                    organizationId: ctx.organizationId,
+                    id: input.id
+                }
+            })
+            return transaction;
         })
 })
 

@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/shared/ui/sidebar";
-import { BookOpenIcon, FileTextIcon } from "lucide-react";
+import { BookOpenIcon, FileTextIcon, ArrowLeftRightIcon, ChevronsLeftRightEllipsisIcon } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -70,7 +70,7 @@ export function ReportsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link href="/cabinet/transactions">
-                    <BookOpenIcon />
+                    <ArrowLeftRightIcon />
                     <span>Транзакции</span>
                   </Link>
                 </SidebarMenuButton>
@@ -78,7 +78,7 @@ export function ReportsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link href="/cabinet/connection">
-                    <BookOpenIcon />
+                    <ChevronsLeftRightEllipsisIcon />
                     <span>POS-Терминал</span>
                   </Link>
                 </SidebarMenuButton>
