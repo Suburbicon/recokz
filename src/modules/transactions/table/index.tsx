@@ -63,7 +63,7 @@ export function TransactionsTable() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          targetUrl: `https://${localStorage.getItem('posIpAddressHalyk')}:8080`,
+          targetUrl: `https://${localStorage.getItem('posIpAddressHalyk')}`,
           targetMethod: 'POST',
           targetBody: {
             task: 'purchase',
