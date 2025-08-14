@@ -20,13 +20,72 @@ import { EmptyReports } from "./empty-states";
 import { EmptyReportsDone } from "./empty-states";
 import { api } from "@/shared/lib/trpc/client";
 import { useQueryState } from "nuqs";
+import { useState, ChangeEvent, FormEvent } from "react";
+import { LoaderIcon } from "@/shared/ui/loader";
+import { toast } from 'sonner';
 
 export function ReportsTable() {
+  const [image, setImage] = useState<File | null>(null);
+  const [responseImage, setResponseImage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [tab] = useQueryState("tab", {
     defaultValue: "all",
     parse: (value) => value as "all" | "in_progress" | "done",
   });
   const { data: reports } = api.reports.getAll.useQuery();
+
+  const { mutateAsync: submitImage } = api.documents.parseImage.useMutation();
+
+
+  if (isLoading) {
+      return (
+        <div className="p-6">
+          <LoaderIcon className="animate-spin" />
+        </div>
+      );
+    }
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setImage(e.target.files[0]);
+    }
+  };
+
+  function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
+  const customHandleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    try {
+      setIsLoading(true);
+      e.preventDefault();
+
+      let imageDataUrl: string | undefined = undefined;
+      if (image) {
+        imageDataUrl = await toBase64(image);
+        const response = await submitImage({
+          imageUrl: imageDataUrl
+        });
+        setResponseImage(response);
+        console.log(response)
+      }
+
+      setImage(null);
+      const fileInput = e.currentTarget?.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } catch (error) {
+      toast.error("Произошла ошибка " + error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatBalance = (balanceInKopecks: number) => {
     return (balanceInKopecks / 100).toLocaleString("ru-RU", {
@@ -108,6 +167,36 @@ export function ReportsTable() {
           </TableBody>
         </Table>
       )}
+
+      <div>
+        <p className='mb-3'>Считать текст с картинки</p> 
+        <form onSubmit={customHandleSubmit} className='flex flex-col items-start space-y-3'>
+          <label className='space-x-2 cursor-pointer'>
+            <span className='p-2 bg-primary text-primary-foreground rounded-xl'>
+              Загрузить
+            </span>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </label>
+
+          <Button type="submit" variant="default" size="sm">
+            Отправить
+          </Button>
+        </form>
+        {responseImage && (
+          <div className='flex flex col items-start mt-3'>
+            <p>Ответ:</p>
+            <div className="flex flex-col items-start">
+              {responseImage.split(',').map(el => (
+                <span key={el}>{el}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       {!allCount && tab === "all" && <EmptyReports />}
       {!inProgressCount && tab === "in_progress" && <EmptyReportsInProgress />}
       {!doneCount && tab === "done" && <EmptyReportsDone />}

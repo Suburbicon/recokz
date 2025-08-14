@@ -248,6 +248,14 @@ export const documentsRouter = createTRPCRouter({
       }
     }),
 
+  parseImage: protectedProcedure
+    .input(z.object({ imageUrl: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const response = await ai.detectImage(input.imageUrl);
+
+      return response;
+    }),
+
   getAll: protectedProcedure
     .input(z.object({ reportId: z.string() }))
     .query(async ({ ctx, input }) => {
