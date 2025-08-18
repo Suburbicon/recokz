@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import axios from 'axios';
 import https from 'https';
 
 function isValidPublicIp(ip: string): boolean {
@@ -32,34 +33,32 @@ export async function POST(request: Request) {
 
     if (targetMethod === 'GET') {
         console.log('KASSPIIII')
-        externalResponse = await fetch(targetUrl, {
+        externalResponse = await axios(targetUrl, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
-            ...{ agent: insecureAgent },
+            httpsAgent: insecureAgent
         });
         console.log(externalResponse)
     } else {
-        externalResponse = await fetch(targetUrl, {
+        externalResponse = await axios(targetUrl, {
             method: targetMethod,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(targetBody)
+            data: JSON.stringify(targetBody)
         });
     }
 
-    if (!externalResponse.ok) {
+    if (externalResponse.status !== 200) {
         return NextResponse.json(
             { error: `External server error: ${externalResponse.statusText}` },
             { status: externalResponse.status }
         );
     }
-    
-    const data = await externalResponse.json();
 
-    return NextResponse.json(data);
+    return NextResponse.json(externalResponse.data);
 
   } catch (error) {
     console.error(error);
