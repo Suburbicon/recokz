@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import https from 'https';
 
 function isValidPublicIp(ip: string): boolean {
   if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('127.')) {
@@ -8,6 +9,10 @@ function isValidPublicIp(ip: string): boolean {
 
   return true;
 }
+
+const insecureAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 export async function POST(request: Request) {
   try {
@@ -31,6 +36,7 @@ export async function POST(request: Request) {
             headers: {
                 'Content-Type': 'application/json',
             },
+            ...{ agent: insecureAgent },
         });
     } else {
         externalResponse = await fetch(targetUrl, {
