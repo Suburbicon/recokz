@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     let externalResponse = null;
 
     if (targetMethod === 'GET') {
+        console.log('KASSPIIII')
         externalResponse = await fetch(targetUrl, {
             method: 'GET',
             headers: {
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
             },
             ...{ agent: insecureAgent },
         });
+        console.log(externalResponse)
     } else {
         externalResponse = await fetch(targetUrl, {
             method: targetMethod,
