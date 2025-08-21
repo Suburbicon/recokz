@@ -95,7 +95,7 @@ model Transaction {
 
 model CrmTransaction {
   id               String             @id @default(uuid()) @map("id")
-  amount           Int                @map("amount")
+  amount           String             @map("amount")
   date             DateTime           @map("date")
   meta             Json               @map("meta")
   transactionId    String             @map("transactionId")
@@ -113,7 +113,7 @@ model CrmTransaction {
 
 model BankTransaction {
   id            String   @id @default(uuid()) @map("id")
-  amount        Int      @map("amount")
+  amount        String   @map("amount")
   date          DateTime @map("date")
   meta          Json     @map("meta")
   transactionId String   @map("transactionId")

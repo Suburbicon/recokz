@@ -102,38 +102,34 @@ export function TransactionsTable() {
   const sendPaymentKaspi = async (transaction: Transaction) => {
     setLoading(true);
     try {
-      const response = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddressKaspi')}/v2/payment?amount=${transaction.amount}`
-        // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
-      );
+      // const response = await axiosApi.get(
+      //   `https://${localStorage.getItem('posIpAddressKaspi')}/v2/payment?amount=${transaction.amount}`
+      //   // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
+      // );
+      await axiosApi.post(
+        '/api/create-payment',
+        {
+          amount: transaction.amount,
+          organizationId: transaction.organizationId,
+          transactionId: transaction.id
+        }
+      )
 
-      let status = response.data.data.status;
-      let paymentResponse = response;
+      toast.success(`Транзакция (${transaction.amount}) отправилась на POS-терминал`);
 
-      while (status === 'wait') {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        paymentResponse = await axiosApi.get(
-        `https://${localStorage.getItem('posIpAddressKaspi')}/v2/status?processId=${response.data.data.processId}`
-        // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
-        );
-        status = paymentResponse.data.data.status;
-      }
+      // while (status === 'wait') {
+      //   await new Promise((resolve) => setTimeout(resolve, 1000));
+      //   paymentResponse = await axiosApi.post(
+      //     '/api/status-payment',
+          
+      //   )
+      //   paymentResponse = await axiosApi.get(
+      //   `https://${localStorage.getItem('posIpAddressKaspi')}/v2/status?processId=${response.data.data.processId}`
+      //   // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
+      //   );
+      //   status = paymentResponse.data.data.status;
+      // }
 
-      const bankT = await createBankTransaction({
-        amount: transaction.amount,
-        date: paymentResponse.data.data.chequeInfo.date,
-        meta: paymentResponse.data,
-        organizationId: user.publicMetadata.organizationId as string,
-        transactionId: paymentResponse.data.data.transactionId
-      })
-      if (bankT) {
-        await updateCrmTransaction({
-          transactionId: transaction.id,
-          bankTransactionId: bankT.id
-        })
-      } else {
-        throw Error('Произошла ошибка с созданием банковской транзакции')
-      }
     } catch (error) {
       console.log(error)
       toast.error("Произошла ошибка при отправке платежа");

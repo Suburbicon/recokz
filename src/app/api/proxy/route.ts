@@ -35,9 +35,6 @@ export async function POST(request: Request) {
         console.log('KASSPIIII')
         externalResponse = await axios(targetUrl, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             httpsAgent: insecureAgent
         });
         console.log(externalResponse)
