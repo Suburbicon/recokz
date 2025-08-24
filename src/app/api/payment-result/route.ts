@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "@/shared/lib/prisma";
+import dayjs from 'dayjs';
 
 
 export async function POST(request: Request) {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const bankT = await prisma.bankTransaction.create({
       data: {
         amount: result.pos_response.data.chequeInfo.amount,
-        date: new Date(result.pos_response.data.chequeInfo.date),
+        date: dayjs(result.pos_response.data.chequeInfo.date).toISOString(),
         meta: result.pos_response.data,
         organizationId: organization_id as string,
         transactionId: result.pos_response.data.transactionId
