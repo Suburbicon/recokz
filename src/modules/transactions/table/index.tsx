@@ -172,7 +172,7 @@ export function TransactionsTable() {
                 <TableCell>
                   {dayjs(item.date).format("DD.MM.YYYY, HH:mm")}
                 </TableCell>
-                <TableCell>{formatBalance(item.amount)}</TableCell>
+                <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>
                   { 
                     item.meta?.data?.expense.title || "Неизвестно"
