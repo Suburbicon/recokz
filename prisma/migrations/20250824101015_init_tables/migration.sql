@@ -51,9 +51,37 @@ CREATE TABLE "transactions" (
     "date" TIMESTAMP(3) NOT NULL,
     "meta" JSONB NOT NULL,
     "document_id" TEXT,
+    "organization_id" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "transactions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "crm_transactions" (
+    "id" TEXT NOT NULL,
+    "amount" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "meta" JSONB NOT NULL,
+    "transactionId" TEXT NOT NULL,
+    "bank_transaction_id" TEXT,
+    "organization_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "crm_transactions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "bank_transactions" (
+    "id" TEXT NOT NULL,
+    "amount" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "meta" JSONB NOT NULL,
+    "transactionId" TEXT NOT NULL,
+    "organization_id" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "bank_transactions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -87,6 +115,18 @@ ALTER TABLE "documents" ADD CONSTRAINT "documents_report_id_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "documents"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "crm_transactions" ADD CONSTRAINT "crm_transactions_bank_transaction_id_fkey" FOREIGN KEY ("bank_transaction_id") REFERENCES "bank_transactions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "crm_transactions" ADD CONSTRAINT "crm_transactions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "bank_transactions" ADD CONSTRAINT "bank_transactions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "reconciliations" ADD CONSTRAINT "reconciliations_report_id_fkey" FOREIGN KEY ("report_id") REFERENCES "reports"("id") ON DELETE CASCADE ON UPDATE CASCADE;
