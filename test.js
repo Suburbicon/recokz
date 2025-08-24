@@ -1,19 +1,22 @@
 import axios from "axios";
 import { readFile } from "fs/promises";
+import dayjs from "dayjs";
 
-const data = JSON.parse(await readFile("./t.json", "utf-8"));
+console.log(dayjs("06.03.23 14:20:11").toISOString())
 
-for (let d of data) {
-    console.log(d.resource)
-    if (d.resource === 'finances_operation' && d.status === 'create') {
-        console.log(d)
-        axios.post("http://localhost:5173/api/webhook/b1281f33-a1e0-45ed-849a-52728bc21c8e", d)
-        .then(response => {
-            console.log("Transaction created:", response.data);
-        })
-        .catch(error => {
-            console.error("Error creating transaction:", error);
-        });
-    }
-}
+// const data = JSON.parse(await readFile("./t.json", "utf-8"));
+
+// for (let d of data) {
+//     console.log(d.resource)
+//     if (d.resource === 'finances_operation' && d.status === 'create') {
+//         console.log(d)
+//         axios.post("http://localhost:5173/api/webhook/b1281f33-a1e0-45ed-849a-52728bc21c8e", d)
+//         .then(response => {
+//             console.log("Transaction created:", response.data);
+//         })
+//         .catch(error => {
+//             console.error("Error creating transaction:", error);
+//         });
+//     }
+// }
 

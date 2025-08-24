@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const bankT = await prisma.bankTransaction.create({
       data: {
         amount: result.pos_response.data.chequeInfo.amount,
-        date: dayjs(result.pos_response.data.chequeInfo.date).toISOString(),
+        date: dayjs(result.pos_response.data.chequeInfo.date).toISOString() || dayjs().toISOString(),
         meta: result.pos_response.data,
         organizationId: organization_id as string,
         transactionId: result.pos_response.data.transactionId

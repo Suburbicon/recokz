@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'organizationId and amount are required' }, { status: 400 });
     }
 
-    const channelName = 'public-store-001';
+    const channelName = 'public-store-002';
     const eventName = 'create-payment-command';
     const payload = { 
         amount,
