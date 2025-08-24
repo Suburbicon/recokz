@@ -60,4 +60,5 @@ export interface Transaction {
     documentId: string | null;
     organizationId: string;
     createdAt: string;
+    bankTransactionId: string | null;
 }

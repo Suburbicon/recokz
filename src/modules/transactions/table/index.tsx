@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react'
+import { useState } from 'react';
+import { TrashIcon } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -20,6 +21,7 @@ import { useUser } from '@clerk/clerk-react';
 
 export function TransactionsTable() {
   const { user } = useUser();
+  const utils = api.useUtils();
   const [isLoading, setLoading] = useState(false);
   const { data: transactions } = api.crmTransaction.getAll.useQuery() as {data: Transaction[]};
 
@@ -38,6 +40,13 @@ export function TransactionsTable() {
     }
   })
 
+  const { mutateAsync: deleteCrmTransaction } = api.crmTransaction.delete.useMutation({
+    onSuccess: () => {
+      toast("CRM транзакция удалена");
+      utils.crmTransaction.getAll.invalidate();
+    }
+  })
+
   if (!transactions || isLoading || !user) {
     return (
       <div className="p-6">
@@ -53,6 +62,10 @@ export function TransactionsTable() {
       minimumFractionDigits: 2,
     });
   };
+
+  const deleteHandler = async (transaction: Transaction) => {
+    await deleteCrmTransaction({ id: transaction.id })
+  }
 
   const sendPaymentHalyk = async (transaction: Transaction) => {
     setLoading(true);
@@ -102,10 +115,6 @@ export function TransactionsTable() {
   const sendPaymentKaspi = async (transaction: Transaction) => {
     setLoading(true);
     try {
-      // const response = await axiosApi.get(
-      //   `https://${localStorage.getItem('posIpAddressKaspi')}/v2/payment?amount=${transaction.amount}`
-      //   // `http://localhost:3000/v2/payment?amount=${transaction.amount}`
-      // );
       await axiosApi.post(
         '/api/create-payment',
         {
@@ -116,20 +125,6 @@ export function TransactionsTable() {
       )
 
       toast.success(`Транзакция (${transaction.amount}) отправилась на POS-терминал`);
-
-      // while (status === 'wait') {
-      //   await new Promise((resolve) => setTimeout(resolve, 1000));
-      //   paymentResponse = await axiosApi.post(
-      //     '/api/status-payment',
-          
-      //   )
-      //   paymentResponse = await axiosApi.get(
-      //   `https://${localStorage.getItem('posIpAddressKaspi')}/v2/status?processId=${response.data.data.processId}`
-      //   // `http://localhost:3000/v2/status?processId=${response.data.data.processId}`
-      //   );
-      //   status = paymentResponse.data.data.status;
-      // }
-
     } catch (error) {
       console.log(error)
       toast.error("Произошла ошибка при отправке платежа");
@@ -156,17 +151,26 @@ export function TransactionsTable() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Статус</TableHead>
               <TableHead>Дата</TableHead>
               <TableHead>Сумма</TableHead>
               <TableHead>Описание</TableHead>
-              <TableHead className="w-[100px]">Оплатить</TableHead>
+              <TableHead className="w-[80px]">Оплатить</TableHead>
+              <TableHead className="w-[50px]">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions.map((item) => (
-              <TableRow key={item.id}>
+              <TableRow key={item.id} className={
+                item.bankTransactionId 
+                ? 'bg-[#1b6b23a0] text-white hover:bg-[#1b6b23a0]'
+                : ''
+              }>
                 <TableCell>
-                  {dayjs(item.date).format("DD.MM.YYYY")}
+                  {item.bankTransactionId ? 'Оплачено' : 'Не оплачено'}
+                </TableCell>
+                <TableCell>
+                  {dayjs(item.date).format("DD.MM.YYYY, HH:mm")}
                 </TableCell>
                 <TableCell>{formatBalance(item.amount)}</TableCell>
                 <TableCell>
@@ -177,7 +181,7 @@ export function TransactionsTable() {
                 <TableCell>
                   <div className="flex justify-end gap-2">
                     <Button 
-                      className="flex w-full px-2 bg-red-600 text-white" 
+                      className="flex w-full px-1 bg-red-600 text-white" 
                       variant="default" 
                       size="icon" 
                       asChild
@@ -186,7 +190,7 @@ export function TransactionsTable() {
                       <div>Kaspi</div>
                     </Button>
                     <Button 
-                      className="flex w-full px-2 bg-green-600 text-white" 
+                      className="flex w-full px-1 bg-green-600 text-white" 
                       variant="default" 
                       size="icon" 
                       asChild
@@ -195,6 +199,13 @@ export function TransactionsTable() {
                       <div>Halyk</div>
                     </Button>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {!item.bankTransactionId && (
+                    <button type='button' className='cursor-pointer' onClick={() => deleteHandler(item)}>
+                      <TrashIcon/>
+                    </button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

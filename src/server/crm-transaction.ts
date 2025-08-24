@@ -10,7 +10,7 @@ export const crmTransactionRouter = createTRPCRouter({
                     organizationId: ctx.organizationId
                 },
                 orderBy: {
-                    createdAt: "desc"
+                    date: "desc"
                 }
             });
             return transactions;
@@ -38,6 +38,15 @@ export const crmTransactionRouter = createTRPCRouter({
                 }
             })
             return transaction;
+        }),
+    delete: protectedProcedure
+        .input(z.object({
+            id: z.string()
+        }))
+        .mutation(async ({ctx, input}) => {
+            await ctx.prisma.crmTransaction.delete({
+                where: { id: input.id }
+            })
         })
 })
 
