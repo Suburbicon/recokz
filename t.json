@@ -53,5 +53,60 @@
         "resource": "finances_operation",
         "company_id": 1266617,
         "resource_id": 526966438
+    },
+    {
+        "data": {
+            "id": 526966438,
+            "date": "2025-08-14T13:00:00+0400",
+            "amount": 32000,
+            "client": {
+                "id": 172856485,
+                "name": "Асель",
+                "email": "",
+                "phone": "+77784444573",
+                "surname": "",
+                "patronymic": ""
+            },
+            "master": [],
+            "record": {
+                "id": 601530732,
+                "date": "2025-08-14 14:00:00",
+                "comment": "10000иг пэй 11,08",
+                "deleted": false,
+                "prepaid": false,
+                "staff_id": 2848653,
+                "visit_id": 512993127,
+                "is_online": false,
+                "paid_full": 1,
+                "activity_id": 0,
+                "location_id": 1266617,
+                "custom_color": "",
+                "clients_count": 1,
+                "attendance_status": 1
+            },
+            "account": {
+                "id": 2564501,
+                "title": "Каспи",
+                "is_cash": false,
+                "is_default": false
+            },
+            "comment": "",
+            "expense": {
+                "id": 5,
+                "type": 7,
+                "title": "Service payments"
+            },
+            "supplier": [],
+            "visit_id": 512993127,
+            "record_id": 601530732,
+            "document_id": 688989466,
+            "sold_item_id": 12349316,
+            "sold_item_type": "service",
+            "last_change_date": "2025-08-14T13:04:27+0400"
+        },
+        "status": "create",
+        "resource": "finances_operation",
+        "company_id": 1266617,
+        "resource_id": 526966438
     }
 ]

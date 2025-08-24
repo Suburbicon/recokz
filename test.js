@@ -4,9 +4,10 @@ import { readFile } from "fs/promises";
 const data = JSON.parse(await readFile("./t.json", "utf-8"));
 
 for (let d of data) {
-    if (d.meta?.resource === 'finances_operation' && d.meta?.status === 'create') {
+    console.log(d.resource)
+    if (d.resource === 'finances_operation' && d.status === 'create') {
         console.log(d)
-        axios.post("https://www.reco.kz/api/webhook/7f88931c-3ea7-4d4b-a471-2a18e37c979e", d.meta)
+        axios.post("http://localhost:5173/api/webhook/b1281f33-a1e0-45ed-849a-52728bc21c8e", d)
         .then(response => {
             console.log("Transaction created:", response.data);
         })
