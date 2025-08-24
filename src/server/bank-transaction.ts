@@ -1,12 +1,13 @@
 import { createTRPCRouter } from "@/shared/lib/trpc/server";
 import { protectedProcedure } from "@/shared/lib/trpc/server";
 import { z } from "zod";
+import dayjs from 'dayjs';
 
 
 export const bankTransactionRouter = createTRPCRouter({
     create: protectedProcedure
         .input(z.object({
-            amount: z.number(),
+            amount: z.string(),
             date: z.string(),
             meta: z.any(),
             organizationId: z.string(),
@@ -16,7 +17,7 @@ export const bankTransactionRouter = createTRPCRouter({
             const bankT = await ctx.prisma.bankTransaction.create({
                 data: {
                     amount: input.amount,
-                    date: new Date(input.date),
+                    date: dayjs(input.date).toISOString(),
                     meta: input.meta,
                     organizationId: input.organizationId,
                     transactionId: input.transactionId
