@@ -12,10 +12,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'organizationId and result are required' }, { status: 400 });
     }
 
+    const parsedDate = dayjs(result.pos_response.data.chequeInfo.date);
+
+    const parsedResultDate = parsedDate.isValid()
+      ? parsedDate.toISOString()
+      : dayjs().toISOString();
+
     const bankT = await prisma.bankTransaction.create({
       data: {
         amount: result.pos_response.data.chequeInfo.amount,
-        date: dayjs(result.pos_response.data.chequeInfo.date).toISOString() || dayjs().toISOString(),
+        date: parsedResultDate,
         meta: result.pos_response.data,
         organizationId: organization_id as string,
         transactionId: result.pos_response.data.transactionId
