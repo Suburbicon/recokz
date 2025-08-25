@@ -175,7 +175,7 @@ export function TransactionsTable() {
                 <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>
                   { 
-                    item.meta?.data?.expense.title || "Неизвестно"
+                    `${item.meta?.data?.expense?.title} ${item.meta?.data?.account?.title}`
                   }
                 </TableCell>
                 <TableCell>
