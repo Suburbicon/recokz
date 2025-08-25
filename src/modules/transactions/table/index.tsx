@@ -25,21 +25,6 @@ export function TransactionsTable() {
   const [isLoading, setLoading] = useState(false);
   const { data: transactions } = api.crmTransaction.getAll.useQuery() as {data: Transaction[]};
 
-  const { mutateAsync: createBankTransaction } = api.bankTransaction.create.useMutation({
-    onSuccess: () => {
-      toast("Банковская транзакция создалась успешно")
-    },
-    onError: () => {
-      toast("Произошла ошибка с созданием банковской транзакции")
-    }
-  })
-
-  const { mutateAsync: updateCrmTransaction } = api.crmTransaction.update.useMutation({
-    onSuccess: () => {
-      toast("CRM транзакция обновилась успешно")
-    }
-  })
-
   const { mutateAsync: deleteCrmTransaction } = api.crmTransaction.delete.useMutation({
     onSuccess: () => {
       toast("CRM транзакция удалена");
@@ -70,46 +55,24 @@ export function TransactionsTable() {
   const sendPaymentHalyk = async (transaction: Transaction) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/proxy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          targetUrl: `https://${localStorage.getItem('posIpAddressHalyk')}`,
-          targetMethod: 'POST',
-          targetBody: {
-            task: 'purchase',
-            data: {
-              amount: transaction.amount
-            }
-          }
-        })
-      })
-
-      const response_data = await response.json();
-
-      const bankT = await createBankTransaction({
-        amount: transaction.amount,
-        date: response_data.data.dateTime,
-        meta: response_data.data,
-        organizationId: user.publicMetadata.organizationId as string,
-        transactionId: response_data.data.terminalId
-      })
-      if (bankT) {
-        await updateCrmTransaction({
+      await axiosApi.post(
+        '/api/create-payment',
+        {
+          amount: transaction.amount,
+          organizationId: transaction.organizationId,
           transactionId: transaction.id,
-          bankTransactionId: bankT.id
-        })
-      } else {
-        throw Error('Произошла ошибка с созданием банковской транзакции')
-      }
+          type: 'halyk',
+          companyId: user.publicMetadata.organizationId
+        }
+      )
+
+      toast.success(`Транзакция (${transaction.amount}) отправилась на Halyk-терминал`);
     } catch (error) {
       console.log(error)
       toast.error("Произошла ошибка при отправке платежа");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   }
 
   const sendPaymentKaspi = async (transaction: Transaction) => {
@@ -120,11 +83,13 @@ export function TransactionsTable() {
         {
           amount: transaction.amount,
           organizationId: transaction.organizationId,
-          transactionId: transaction.id
+          transactionId: transaction.id,
+          type: 'kaspi',
+          companyId: user.publicMetadata.organizationId
         }
       )
 
-      toast.success(`Транзакция (${transaction.amount}) отправилась на POS-терминал`);
+      toast.success(`Транзакция (${transaction.amount}) отправилась на Kaspi-терминал`);
     } catch (error) {
       console.log(error)
       toast.error("Произошла ошибка при отправке платежа");
