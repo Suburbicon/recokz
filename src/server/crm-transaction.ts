@@ -10,7 +10,7 @@ export const crmTransactionRouter = createTRPCRouter({
                     organizationId: ctx.organizationId
                 },
                 orderBy: {
-                    date: "desc"
+                    createdAt: "desc"
                 }
             });
             return transactions;

@@ -170,7 +170,7 @@ export function TransactionsTable() {
                   {item.bankTransactionId ? 'Оплачено' : 'Не оплачено'}
                 </TableCell>
                 <TableCell>
-                  {dayjs(item.date).format("DD.MM.YYYY, HH:mm")}
+                  {dayjs(item.createdAt).format("DD.MM.YYYY, HH:mm")}
                 </TableCell>
                 <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>

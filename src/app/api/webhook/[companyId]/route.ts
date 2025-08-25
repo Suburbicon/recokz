@@ -10,28 +10,18 @@ export async function POST(
   const { companyId } = params;
   
   try {
-    // if (data.resource === 'finances_operation' && data.status === 'create') {
-    //   await prisma.crmTransaction.create({
-    //     data: {
-    //       amount: data.data?.amount.toString(),
-    //       date: new Date(data.data?.date),
-    //       meta: data,
-    //       transactionId: data.data?.document_id?.toString() || '0',
-    //       organizationId: companyId,
-    //       bankTransactionId: null
-    //     },
-    //   });
-    // }
-    await prisma.crmTransaction.create({
-      data: {
-        amount: data.data?.amount.toString(),
-        date: new Date(data.data?.date),
-        meta: data,
-        transactionId: data.data?.document_id?.toString() || '0',
-        organizationId: companyId,
-        bankTransactionId: null
-      },
-    });
+    if (data.resource === 'finances_operation' && data.status === 'create') {
+      await prisma.crmTransaction.create({
+        data: {
+          amount: data.data?.amount.toString(),
+          date: new Date(data.data?.date),
+          meta: data,
+          transactionId: data.data?.document_id?.toString() || '0',
+          organizationId: companyId,
+          bankTransactionId: null
+        },
+      });
+    }
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: e }, { status: 500 });
