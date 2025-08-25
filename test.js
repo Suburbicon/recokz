@@ -2,7 +2,13 @@ import axios from "axios";
 import { readFile } from "fs/promises";
 import dayjs from "dayjs";
 
-console.log(dayjs("sdfasds").toISOString() || dayjs().toISOString())
+const parsedDate = dayjs("sdasdsad");
+
+const parsedResultDate = parsedDate.isValid()
+? parsedDate.toISOString()
+: dayjs().toISOString();
+
+console.log(parsedResultDate)
 
 // const data = JSON.parse(await readFile("./t.json", "utf-8"));
 
