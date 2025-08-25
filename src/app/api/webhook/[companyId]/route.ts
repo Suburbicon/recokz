@@ -24,7 +24,7 @@ export async function POST(
     // }
     await prisma.crmTransaction.create({
       data: {
-        amount: data.data?.amount.toString(),
+        amount: data.data?.amount?.toString() || '0',
         date: new Date(data.data?.date),
         meta: data,
         transactionId: data.data?.document_id?.toString() || '0',
