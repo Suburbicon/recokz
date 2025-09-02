@@ -87,9 +87,6 @@ model Transaction {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  bankReconciliations Reconciliation[] @relation("CrmTransaction")
-  crmReconciliations  Reconciliation[] @relation("BankTransaction")
-
   @@map("transactions")
 }
 
@@ -105,6 +102,8 @@ model CrmTransaction {
 
   organization    Organization? @relation(fields: [organizationId], references: [id])
   organizationId  String?       @map("organization_id")
+
+  reconciliations    Reconciliation[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -122,6 +121,7 @@ model BankTransaction {
   organizationId  String?       @map("organization_id")
 
   crmTransaction    CrmTransaction[]
+  reconciliations    Reconciliation[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -134,10 +134,10 @@ model Reconciliation {
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")
 
-  bankTransaction   BankTransaction? @relation("BankTransaction", fields: [bankTransactionId], references: [id])
+  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id])
   bankTransactionId String?      @map("bank_transaction_id")
 
-  crmTransaction   CrmTransaction? @relation("CrmTransaction", fields: [crmTransactionId], references: [id])
+  crmTransaction   CrmTransaction? @relation(fields: [crmTransactionId], references: [id])
   crmTransactionId String?      @map("crm_transaction_id")
 
   type   TransactionType? @relation(fields: [typeId], references: [id])
