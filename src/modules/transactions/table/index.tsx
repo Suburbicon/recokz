@@ -60,7 +60,7 @@ export function TransactionsTable() {
         {
           amount: transaction.amount,
           organizationId: transaction.organizationId,
-          transactionId: transaction.id,
+          transactionIds: [transaction.id],
           type: 'halyk',
           companyId: user.publicMetadata.organizationId
         }
@@ -83,7 +83,7 @@ export function TransactionsTable() {
         {
           amount: transaction.amount,
           organizationId: transaction.organizationId,
-          transactionId: transaction.id,
+          transactionIds: [transaction.id],
           type: 'kaspi',
           companyId: user.publicMetadata.organizationId
         }

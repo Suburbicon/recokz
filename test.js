@@ -2,27 +2,27 @@ import axios from "axios";
 import { readFile } from "fs/promises";
 import dayjs from "dayjs";
 
-const parsedDate = dayjs("sdasdsad");
+// const parsedDate = dayjs("sdasdsad");
 
-const parsedResultDate = parsedDate.isValid()
-? parsedDate.toISOString()
-: dayjs().toISOString();
+// const parsedResultDate = parsedDate.isValid()
+// ? parsedDate.toISOString()
+// : dayjs().toISOString();
 
-console.log(parsedResultDate)
+// console.log(parsedResultDate)
 
-// const data = JSON.parse(await readFile("./t.json", "utf-8"));
+const data = JSON.parse(await readFile("./t.json", "utf-8"));
 
-// for (let d of data) {
-//     console.log(d.resource)
-//     if (d.resource === 'finances_operation' && d.status === 'create') {
-//         console.log(d)
-//         axios.post("http://localhost:5173/api/webhook/b1281f33-a1e0-45ed-849a-52728bc21c8e", d)
-//         .then(response => {
-//             console.log("Transaction created:", response.data);
-//         })
-//         .catch(error => {
-//             console.error("Error creating transaction:", error);
-//         });
-//     }
-// }
+for (let d of data) {
+    console.log(d.resource)
+    if (d.resource === 'finances_operation' && d.status === 'create') {
+        console.log(d)
+        axios.post("http://localhost:5173/api/webhook/2da60a26-8ea8-47c7-a58e-5bb34a87a6c8", d)
+        .then(response => {
+            console.log("Transaction created:", response.data);
+        })
+        .catch(error => {
+            console.error("Error creating transaction:", error);
+        });
+    }
+}
 

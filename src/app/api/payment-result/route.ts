@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { result, organization_id, transaction_id, type } = body;
+    const { result, organization_id, transaction_ids, type } = body;
 
     if (!organization_id || !result) {
       return NextResponse.json({ message: 'organizationId and result are required' }, { status: 400 });
@@ -29,14 +29,16 @@ export async function POST(request: Request) {
         }
       })
       if (bankT) {
-        await prisma.crmTransaction.update({
-          where: {
-            id: transaction_id
-          },
-          data: {
-            bankTransactionId: bankT.id
-          }
-        })
+        for (const tr_id in transaction_ids) {
+          await prisma.crmTransaction.update({
+            where: {
+              id: tr_id
+            },
+            data: {
+              bankTransactionId: bankT.id
+            }
+          })
+        }
       } else {
         throw Error('Произошла ошибка с созданием банковской транзакции')
       }
@@ -57,14 +59,16 @@ export async function POST(request: Request) {
         }
       })
       if (bankT) {
-        await prisma.crmTransaction.update({
-          where: {
-            id: transaction_id
-          },
-          data: {
-            bankTransactionId: bankT.id
-          }
-        })
+        for (const tr_id in transaction_ids) {
+          await prisma.crmTransaction.update({
+            where: {
+              id: tr_id
+            },
+            data: {
+              bankTransactionId: bankT.id
+            }
+          })
+        }
       } else {
         throw Error('Произошла ошибка с созданием банковской транзакции')
       }

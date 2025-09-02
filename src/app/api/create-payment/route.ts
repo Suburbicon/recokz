@@ -12,7 +12,7 @@ const pusher = new Pusher({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { organizationId, amount, transactionId, type, companyId } = body;
+    const { organizationId, amount, transactionIds, type, companyId } = body;
 
     if (!organizationId || !amount) {
       return NextResponse.json({ message: 'organizationId and amount are required' }, { status: 400 });
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const payload = { 
         amount,
         organization_id: organizationId,
-        transaction_id: transactionId
+        transaction_ids: transactionIds
     };
 
     console.log(`Sending command to channel '${channelName}' with payload:`, payload);

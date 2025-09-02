@@ -32,66 +32,94 @@ export const reconciliationRouter = createTRPCRouter({
         }
 
         // Get bank and CRM transactions
-        const bankTransactions = report.documents
-          .filter((doc: { type: string }) => doc.type === "bank")
-          .flatMap((doc: any) => doc.transactions);
+        // const bankTransactions = report.documents
+        //   .filter((doc: { type: string }) => doc.type === "bank")
+        //   .flatMap((doc: any) => doc.transactions);
 
-        const crmTransactions = report.documents
+        const documentCrmTransactions = report.documents
           .filter((doc: { type: string }) => doc.type === "crm")
           .flatMap((doc: any) => doc.transactions);
 
-        // await reconcileDocs(bankTransactions, crmTransactions);
 
-        // Simple reconciliation logic - match transactions by amount and date
-        // This is a basic implementation that can be enhanced with more sophisticated matching
         const reconciliations = [];
-        const matchedCrmTransactionIds = new Set<string>();
 
-        // First pass: Find matched transactions
-        for (const bankTransaction of bankTransactions) {
-          const matchingCrmTransaction = crmTransactions.find(
-            (crmTx: any) =>
-              crmTx.amount === bankTransaction.amount &&
-              Math.abs(
-                new Date(crmTx.date).getTime() -
-                  new Date(bankTransaction.date).getTime(),
-              ) <
-                24 * 60 * 60 * 1000, // Within 24 hours
-          );
+        for (const documentCrmTransaction of documentCrmTransactions) {
+          const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
+            where: {
+              transactionId: documentCrmTransaction.meta.data.document_id.toString(),
+              organizationId: ctx.organizationId
+            },
+            include: {
+              bankTransaction: true
+            }
+          })
 
-          if (matchingCrmTransaction) {
-            // Matched transaction
+          if (crmTransaction?.bankTransactionId) {
             reconciliations.push({
               reportId: input.reportId,
-              bankTransactionId: bankTransaction.id,
-              crmTransactionId: matchingCrmTransaction.id,
-            });
-            matchedCrmTransactionIds.add(matchingCrmTransaction.id);
-            const index = crmTransactions.findIndex(
-              el => el.id === matchingCrmTransaction.id
-            )
-            crmTransactions.splice(index, 1);
-          } else {
-            // Unmatched bank transaction
-            reconciliations.push({
-              reportId: input.reportId,
-              bankTransactionId: bankTransaction.id,
-              crmTransactionId: null,
-            });
-          }
-        }
-
-        // Second pass: Add unmatched CRM transactions
-        for (const crmTransaction of crmTransactions) {
-          if (!matchedCrmTransactionIds.has(crmTransaction.id)) {
-            // Unmatched CRM transaction
+              bankTransactionId: crmTransaction.bankTransactionId,
+              crmTransactionId: crmTransaction.id
+            })
+          } else if (crmTransaction) {
             reconciliations.push({
               reportId: input.reportId,
               bankTransactionId: null,
-              crmTransactionId: crmTransaction.id,
-            });
+              crmTransactionId: crmTransaction.id
+            })
+          } else {
+            reconciliations.push({
+              reportId: input.reportId,
+              bankTransactionId: null,
+              crmTransactionId: null
+            })
           }
         }
+
+        // First pass: Find matched transactions
+        // for (const bankTransaction of bankTransactions) {
+        //   const matchingCrmTransaction = documentCrmTransactions.find(
+        //     (crmTx: any) =>
+        //       crmTx.amount === bankTransaction.amount &&
+        //       Math.abs(
+        //         new Date(crmTx.date).getTime() -
+        //           new Date(bankTransaction.date).getTime(),
+        //       ) <
+        //         24 * 60 * 60 * 1000, // Within 24 hours
+        //   );
+
+        //   if (matchingCrmTransaction) {
+        //     // Matched transaction
+        //     reconciliations.push({
+        //       reportId: input.reportId,
+        //       bankTransactionId: bankTransaction.id,
+        //       crmTransactionId: matchingCrmTransaction.id,
+        //     });
+        //     matchedCrmTransactionIds.add(matchingCrmTransaction.id);
+        //     const index = documentCrmTransactions.findIndex(
+        //       el => el.id === matchingCrmTransaction.id
+        //     )
+        //     documentCrmTransactions.splice(index, 1);
+        //   } else {
+        //     // Unmatched bank transaction
+        //     reconciliations.push({
+        //       reportId: input.reportId,
+        //       bankTransactionId: bankTransaction.id,
+        //       crmTransactionId: null,
+        //     });
+        //   }
+        // }
+
+        // // Second pass: Add unmatched CRM transactions
+        // for (const crmTransaction of documentCrmTransactions) {
+        //   if (!matchedCrmTransactionIds.has(crmTransaction.id)) {
+        //     // Unmatched CRM transaction
+        //     reconciliations.push({
+        //       reportId: input.reportId,
+        //       bankTransactionId: null,
+        //       crmTransactionId: crmTransaction.id,
+        //     });
+        //   }
+        // }
 
         // Delete existing reconciliations for this report
         await ctx.prisma.reconciliation.deleteMany({
@@ -122,9 +150,7 @@ export const reconciliationRouter = createTRPCRouter({
           reconciliationsCount: result.count,
           matchedCount,
           unmatchedBankCount,
-          unmatchedCrmCount,
-          bankTransactionsCount: bankTransactions.length,
-          crmTransactionsCount: crmTransactions.length,
+          unmatchedCrmCount
         };
       } catch (error) {
         console.error("Error during reconciliation:", error);

@@ -134,10 +134,10 @@ model Reconciliation {
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")
 
-  bankTransaction   Transaction? @relation("BankTransaction", fields: [bankTransactionId], references: [id])
+  bankTransaction   BankTransaction? @relation("BankTransaction", fields: [bankTransactionId], references: [id])
   bankTransactionId String?      @map("bank_transaction_id")
 
-  crmTransaction   Transaction? @relation("CrmTransaction", fields: [crmTransactionId], references: [id])
+  crmTransaction   CrmTransaction? @relation("CrmTransaction", fields: [crmTransactionId], references: [id])
   crmTransactionId String?      @map("crm_transaction_id")
 
   type   TransactionType? @relation(fields: [typeId], references: [id])
