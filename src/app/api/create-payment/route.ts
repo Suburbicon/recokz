@@ -12,14 +12,14 @@ const pusher = new Pusher({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { organizationId, amount, transactionIds, type, companyId } = body;
+    const { organizationId, amount, transactionIds, type } = body;
 
     if (!organizationId || !amount) {
       return NextResponse.json({ message: 'organizationId and amount are required' }, { status: 400 });
     }
 
     // const channelName = 'public-store-001';
-    const channelName = `public-store-${companyId}`;
+    const channelName = `public-store-${organizationId}`;
     const eventName = `create-payment-command-${type}`;
     // const eventName = 'create-payment-command';
     const payload = { 

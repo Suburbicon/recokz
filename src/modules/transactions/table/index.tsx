@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { TrashIcon } from "lucide-react";
 import {
   Table,
@@ -18,17 +18,33 @@ import { Transaction } from '@/modules/transactions/model/Transaction';
 import { api as axiosApi } from '@/shared/client'
 import { toast } from 'sonner';
 import { useUser } from '@clerk/clerk-react';
+import { CustomCheckbox } from "@/shared/ui/checkbox";
 
 export function TransactionsTable() {
   const { user } = useUser();
   const utils = api.useUtils();
   const [isLoading, setLoading] = useState(false);
+  const [checkedTransactions, setCheckedTransactions] = useState<string[]>([]);
+  const [amountOfTransactions, setAmountOfTransaction] = useState(0);
   const { data: transactions } = api.crmTransaction.getAll.useQuery() as {data: Transaction[]};
 
   const { mutateAsync: deleteCrmTransaction } = api.crmTransaction.delete.useMutation({
     onSuccess: () => {
       toast("CRM транзакция удалена");
       utils.crmTransaction.getAll.invalidate();
+    },
+    onError: () => {
+      toast("Не получилось удалить транзакцию");
+    }
+  })
+
+  const { mutateAsync: updateCrmTransaction } = api.crmTransaction.update.useMutation({
+    onSuccess: () => {
+      toast("CRM транзакция оплачена");
+      utils.crmTransaction.getAll.invalidate();
+    },
+    onError: () => {
+      toast("Не получилось оплатить транзакцию в ручную");
     }
   })
 
@@ -59,10 +75,9 @@ export function TransactionsTable() {
         '/api/create-payment',
         {
           amount: transaction.amount,
-          organizationId: transaction.organizationId,
+          organizationId: user.publicMetadata.organizationId,
           transactionIds: [transaction.id],
-          type: 'halyk',
-          companyId: user.publicMetadata.organizationId
+          type: 'halyk'
         }
       )
 
@@ -82,10 +97,9 @@ export function TransactionsTable() {
         '/api/create-payment',
         {
           amount: transaction.amount,
-          organizationId: transaction.organizationId,
+          organizationId: user.publicMetadata.organizationId,
           transactionIds: [transaction.id],
-          type: 'kaspi',
-          companyId: user.publicMetadata.organizationId
+          type: 'kaspi'
         }
       )
 
@@ -98,12 +112,84 @@ export function TransactionsTable() {
     setLoading(false);
   }
 
+  const handleOptionChange = (event: ChangeEvent<HTMLInputElement>, amount: string) => {
+    const { name: id } = event.target;
+    if (checkedTransactions.includes(id)) {
+      setCheckedTransactions(prev => prev.filter(tId => tId !== id))
+      setAmountOfTransaction(prev => prev - Number(amount))
+      return
+    }
+
+    setCheckedTransactions(prev => [...prev, id])
+    setAmountOfTransaction(prev => prev + Number(amount))
+  }
+
+  const handleCommonPayment = async (type: 'halyk' | 'kaspi') => {
+    setLoading(true);
+    try {
+      await axiosApi.post(
+        '/api/create-payment',
+        {
+          amount: amountOfTransactions.toString(),
+          organizationId: user.publicMetadata.organizationId,
+          transactionIds: checkedTransactions,
+          type: type
+        }
+      )
+
+      toast.success(`Транзакции на сумму (${amountOfTransactions}) отправились на ${type}-терминал`);
+    } catch (error) {
+      console.log(error)
+      toast.error("Произошла ошибка при отправке платежа");
+    }
+
+    setLoading(false);
+  }
+
+  const makeTransactionPayed = async (transaction: Transaction) => {
+    setLoading(true);
+    try {
+      await updateCrmTransaction({
+        transactionId: transaction.id,
+        bankTransactionId: `by-hand-${crypto.randomUUID()}`
+      })
+    } catch (e) {
+      console.log(e)
+    }
+    setLoading(false);
+  }
+
   return (
     <div className="flex flex-col gap-8 mb-12">
-      <div className="flex flex-col gap-4">
+      <div className="flex justify-between flex gap-4">
         <div>
           <h1 className='text-3xl'>Транзакции</h1>
         </div>
+        {checkedTransactions.length !== 0 && (
+          <div>
+            Сумма: {amountOfTransactions}
+            <div className="flex justify-end gap-2">
+              <Button 
+                className="flex w-full px-1 bg-red-600 text-white" 
+                variant="default" 
+                size="icon" 
+                asChild
+                onClick={() => handleCommonPayment('kaspi')}
+              >
+                <div>Kaspi</div>
+              </Button>
+              <Button 
+                className="flex w-full px-1 bg-green-600 text-white" 
+                variant="default" 
+                size="icon" 
+                asChild
+                onClick={() => handleCommonPayment('halyk')}
+              >
+                <div>Halyk</div>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {transactions.length === 0 && (
@@ -132,6 +218,13 @@ export function TransactionsTable() {
                 : ''
               }>
                 <TableCell>
+                  <CustomCheckbox
+                    id={item.id}
+                    name={item.id}
+                    label=""
+                    checked={checkedTransactions.includes(item.id)}
+                    onChange={e => handleOptionChange(e, item.amount)}
+                  />
                   {item.bankTransactionId ? 'Оплачено' : 'Не оплачено'}
                 </TableCell>
                 <TableCell>
@@ -144,32 +237,36 @@ export function TransactionsTable() {
                   }
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      className="flex w-full px-1 bg-red-600 text-white" 
-                      variant="default" 
-                      size="icon" 
-                      asChild
-                      onClick={() => sendPaymentKaspi(item)}
-                    >
-                      <div>Kaspi</div>
-                    </Button>
-                    <Button 
-                      className="flex w-full px-1 bg-green-600 text-white" 
-                      variant="default" 
-                      size="icon" 
-                      asChild
-                      onClick={() => sendPaymentHalyk(item)}
-                    >
-                      <div>Halyk</div>
-                    </Button>
-                  </div>
+                  {!checkedTransactions.includes(item.id) && (
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        className="flex w-full px-1 bg-red-600 text-white" 
+                        variant="default" 
+                        size="icon" 
+                        asChild
+                        onClick={() => sendPaymentKaspi(item)}
+                      >
+                        <div>Kaspi</div>
+                      </Button>
+                      <Button 
+                        className="flex w-full px-1 bg-green-600 text-white" 
+                        variant="default" 
+                        size="icon" 
+                        asChild
+                        onClick={() => sendPaymentHalyk(item)}
+                      >
+                        <div>Halyk</div>
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   {!item.bankTransactionId && (
-                    <button type='button' className='cursor-pointer' onClick={() => deleteHandler(item)}>
-                      <TrashIcon/>
-                    </button>
+                    <div className="flex">
+                      <button type='button' className='cursor-pointer' onClick={() => deleteHandler(item)}>
+                        <TrashIcon/>
+                      </button>
+                    </div>
                   )}
                 </TableCell>
               </TableRow>

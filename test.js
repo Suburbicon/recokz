@@ -16,7 +16,7 @@ for (let d of data) {
     console.log(d.resource)
     if (d.resource === 'finances_operation' && d.status === 'create') {
         console.log(d)
-        axios.post("http://localhost:5173/api/webhook/2da60a26-8ea8-47c7-a58e-5bb34a87a6c8", d)
+        axios.post("http://localhost:5173/api/webhook/373279aa-d96a-40b8-ac01-115baf1031dc", d)
         .then(response => {
             console.log("Transaction created:", response.data);
         })

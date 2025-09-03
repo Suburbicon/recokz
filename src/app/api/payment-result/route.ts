@@ -12,6 +12,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'organizationId and result are required' }, { status: 400 });
     }
 
+    let bankTransaction;
+
     if (type === 'kaspi') {
       const parsedDate = dayjs(result.pos_response.data.chequeInfo.date);
 
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
         ? parsedDate.toISOString()
         : dayjs().toISOString();
 
-      const bankT = await prisma.bankTransaction.create({
+      bankTransaction = await prisma.bankTransaction.create({
         data: {
           amount: result.pos_response.data.chequeInfo.amount,
           date: parsedResultDate,
@@ -28,20 +30,6 @@ export async function POST(request: Request) {
           transactionId: result.pos_response.data.transactionId
         }
       })
-      if (bankT) {
-        for (const tr_id in transaction_ids) {
-          await prisma.crmTransaction.update({
-            where: {
-              id: tr_id
-            },
-            data: {
-              bankTransactionId: bankT.id
-            }
-          })
-        }
-      } else {
-        throw Error('Произошла ошибка с созданием банковской транзакции')
-      }
     } else if (type === 'halyk') {
       const parsedDate = dayjs(result.pos_response.data.dateTime);
 
@@ -49,7 +37,7 @@ export async function POST(request: Request) {
         ? parsedDate.toISOString()
         : dayjs().toISOString();
 
-      const bankT = await prisma.bankTransaction.create({
+      bankTransaction = await prisma.bankTransaction.create({
         data: {
           amount: result.pos_response.data.amount,
           date: parsedResultDate,
@@ -58,20 +46,23 @@ export async function POST(request: Request) {
           transactionId: crypto.randomUUID()
         }
       })
-      if (bankT) {
-        for (const tr_id in transaction_ids) {
-          await prisma.crmTransaction.update({
-            where: {
-              id: tr_id
-            },
-            data: {
-              bankTransactionId: bankT.id
-            }
-          })
-        }
-      } else {
-        throw Error('Произошла ошибка с созданием банковской транзакции')
+    }
+
+    if (bankTransaction) {
+      console.log(transaction_ids)
+      for (const tr_id of transaction_ids) {
+        console.log(tr_id)
+        await prisma.crmTransaction.update({
+          where: {
+            id: tr_id
+          },
+          data: {
+            bankTransactionId: bankTransaction.id
+          }
+        })
       }
+    } else {
+      throw Error('Произошла ошибка с созданием банковской транзакции')
     }
 
     return NextResponse.json({ message: 'Command sent to agent successfully', status: 'wait' }, { status: 200 });

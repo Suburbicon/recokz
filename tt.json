@@ -1,0 +1,37 @@
+{
+    "data": {
+        "id": 529699947,
+        "date": "2025-08-31T11:57:00+0400",
+        "amount": -221538,
+        "client": [],
+        "master": {
+            "id": 2846403,
+            "name": "Амина",
+            "avatar": "https://be.cdn.alteg.io/images/no-master-sm.png"
+        },
+        "record": null,
+        "account": {
+            "id": 2594608,
+            "title": "Наличными",
+            "is_cash": true,
+            "is_default": false
+        },
+        "comment": "Амина зп админ",
+        "expense": {
+            "id": 3,
+            "type": 3,
+            "title": "Staff salaries"
+        },
+        "supplier": [],
+        "visit_id": 0,
+        "record_id": 0,
+        "document_id": 0,
+        "sold_item_id": 0,
+        "sold_item_type": null,
+        "last_change_date": "2025-09-03T11:58:04+0400"
+    },
+    "status": "create",
+    "resource": "finances_operation",
+    "company_id": 1266617,
+    "resource_id": 529699947
+}
