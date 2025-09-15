@@ -123,7 +123,7 @@ export const documentsRouter = createTRPCRouter({
 
           if (!parsedDate) return acc;
 
-          if (!areSameDate(parsedDate, dayjs(date))) {
+          if (!areSameDate(parsedDate, dayjs(date).tz('Asia/Almaty'))) {
             return acc;
           }
 
