@@ -67,7 +67,7 @@ export function parseDateTime(
       "M/D/YYYY", // Форматы без ведущих нулей
       "D.M.YYYY"
     ];
-    const parsedDate = dayjs(dateStr, possibleFormats, true);
+    const parsedDate = dayjs(dateStr, possibleFormats, true).tz(timezone);
     if (!parsedDate.isValid()) {
       console.error("Invalid date format:", dateStr);
       return;

@@ -85,8 +85,8 @@ export const reportsRouter = createTRPCRouter({
       const dataToUpdate: {
         cashBalance?: number;
         status?: ReportStatus;
-        startDate?: Date;
-        endDate?: Date;
+        startDate?: string;
+        endDate?: string;
       } = {
         ...updates,
       };
@@ -94,8 +94,10 @@ export const reportsRouter = createTRPCRouter({
       if (date) {
         const parsedDate = new Date(date);
         if (!isNaN(parsedDate.getTime())) {
-          dataToUpdate.startDate = parsedDate;
-          dataToUpdate.endDate = parsedDate;
+          const dateInISOString = parsedDate.toISOString();
+          
+          dataToUpdate.startDate = dateInISOString;
+          dataToUpdate.endDate = dateInISOString;
         }
       }
 

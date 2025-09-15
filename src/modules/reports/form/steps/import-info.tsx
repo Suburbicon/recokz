@@ -66,7 +66,7 @@ export const ImportInfoStepForm = ({
 
   const handleSubmit = async (values: SchemaType) => {
     if (!report) return;
-
+    console.log(values)
     const status =
       report.status === ReportStatus.import_info
         ? ReportStatus.import_bank

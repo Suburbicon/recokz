@@ -4,7 +4,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { parse } from "@/shared/lib/parse";
 import { ai } from "@/server/ai";
-import { parseDateTime } from "@/shared/lib/parse-date-time";
+import { parseDateTime, areSameDate } from "@/shared/lib/parse-date-time";
 import { parseAmount } from "@/shared/lib/amount";
 import dayjs from "dayjs";
 import { DocumentType, Transaction } from "@prisma/client";
@@ -116,10 +116,12 @@ export const documentsRouter = createTRPCRouter({
 
           if (!parsedDate) return acc;
 
-          if (
-            parsedDate.format("YYYY-MM-DD") !== dayjs(date).format("YYYY-MM-DD")
-          )
+          // if (
+          //   parsedDate.utc().format("YYYY-MM-DD") !== dayjs(date).utc().format("YYYY-MM-DD")
+          // )
+          if (!areSameDate(parsedDate, dayjs(date))) {
             return acc;
+          }            
 
           const amount = parseAmount(
             row,
