@@ -56,13 +56,24 @@ export const reconciliationRouter = createTRPCRouter({
                   bankTransaction: true
                 }
               })
+
+              if (documentCrmTransaction.transactionId.toString() === '694053863') {
+                console.log(crmTransaction)
+              }
               
               if (crmTransaction?.bankTransactionId) {
                 const documentBankTransaction = documentBankTransactions.find(bt => {
                   return bt.transactionId == crmTransaction?.bankTransaction?.transactionId
                 })
 
+                if (documentCrmTransaction.transactionId.toString() === '694053863') {
+                  console.log(documentBankTransaction)
+                }
+
                 if (documentBankTransaction) {
+                  if (documentCrmTransaction.transactionId.toString() === '694053863') {
+                    console.log(documentBankTransaction)
+                  }
                   reconciliations.push({
                     reportId: input.reportId,
                     bankTransactionId: documentBankTransaction.id,
@@ -87,11 +98,6 @@ export const reconciliationRouter = createTRPCRouter({
             console.log(e)
           }
         }
-
-        console.log('\n\n\n\n')
-        console.log('RECONCILIATIONS')
-        console.log(reconciliations)
-        console.log('\n\n\n\n')
 
         for (const documentBankTransaction of documentBankTransactions) {
           const findedDocumentBankTransaction = reconciliations.find(r => r.bankTransactionId === documentBankTransaction.id)
