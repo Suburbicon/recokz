@@ -118,10 +118,18 @@ export const documentsRouter = createTRPCRouter({
           const parsedDate = parseDateTime(
             row[columnsMap.date],
             row[columnsMap.time],
+            'Asia/Almaty'
           );
 
           if (!parsedDate) return acc;
 
+          // if (
+          //   parsedDate.utc().format("YYYY-MM-DD") !== dayjs(date).utc().format("YYYY-MM-DD")
+          // )
+          console.log('DATE', parsedDate.format(), dayjs(date).format('DD/MM/YYYY'), amount)
+          // if (parsedDate.format('DD/MM/YYYY') === dayjs(date).format('DD/MM/YYYY')) {
+          //   console.log('DATE', parsedDate.format('DD/MM/YYYY'), dayjs(date).format('DD/MM/YYYY'))
+          // }
           if (!areSameDate(parsedDate, dayjs(date))) {
             return acc;
           }

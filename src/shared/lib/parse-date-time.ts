@@ -121,8 +121,8 @@ export function areSameDate(
   date2: dayjs.Dayjs | Date,
 ): boolean {
   // Always convert both dates to UTC for a reliable comparison
-  const day1 = dayjs(date1).utc();
-  const day2 = dayjs(date2).utc();
+  const day1 = dayjs(date1);
+  const day2 = dayjs(date2);
 
   // Compare year, month, and day in UTC
   return (
