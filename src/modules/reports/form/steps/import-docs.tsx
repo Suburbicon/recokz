@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { Input } from "@/shared/ui/input";
+import { formatDate } from "@/shared/lib/dayjs";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -169,16 +170,6 @@ export const ImportDocsStepForm = () => {
       style: "currency",
       currency: "KZT",
       minimumFractionDigits: 2,
-    });
-  };
-
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString("ru-RU", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 

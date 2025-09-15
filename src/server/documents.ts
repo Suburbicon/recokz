@@ -109,6 +109,12 @@ export const documentsRouter = createTRPCRouter({
 
           if (!hasAmount) return acc;
 
+          const amount = parseAmount(
+            row,
+            columnsMap.amount,
+            columnsMap.isIncome,
+          );
+
           const parsedDate = parseDateTime(
             row[columnsMap.date],
             row[columnsMap.time],
@@ -116,18 +122,9 @@ export const documentsRouter = createTRPCRouter({
 
           if (!parsedDate) return acc;
 
-          // if (
-          //   parsedDate.utc().format("YYYY-MM-DD") !== dayjs(date).utc().format("YYYY-MM-DD")
-          // )
           if (!areSameDate(parsedDate, dayjs(date))) {
             return acc;
-          }            
-
-          const amount = parseAmount(
-            row,
-            columnsMap.amount,
-            columnsMap.isIncome,
-          );
+          }
 
           const byCash = row.join(', ').includes('Наличными');
 
