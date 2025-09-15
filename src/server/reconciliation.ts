@@ -48,7 +48,7 @@ export const reconciliationRouter = createTRPCRouter({
             if (documentCrmTransaction.transactionId) {
               const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
                 where: {
-                  transactionId: documentCrmTransaction.transactionId?.toString(),
+                  transactionId: documentCrmTransaction.transactionId.toString(),
                   amount: (documentCrmTransaction.amount / 100).toString() // Нужно переделать amount
                   // organizationId: ctx.organizationId
                 },
@@ -87,6 +87,11 @@ export const reconciliationRouter = createTRPCRouter({
             console.log(e)
           }
         }
+
+        console.log('\n\n\n\n')
+        console.log('RECONCILIATIONS')
+        console.log(reconciliations)
+        console.log('\n\n\n\n')
 
         for (const documentBankTransaction of documentBankTransactions) {
           const findedDocumentBankTransaction = reconciliations.find(r => r.bankTransactionId === documentBankTransaction.id)
