@@ -61,15 +61,14 @@ export const reconciliationRouter = createTRPCRouter({
                 const documentBankTransaction = documentBankTransactions.find(bt => {
                   return bt.transactionId == crmTransaction?.bankTransaction?.transactionId
                 })
-                if (!documentBankTransaction) {
-                  console.log(crmTransaction)
-                  console.log(documentBankTransaction)
+
+                if (documentBankTransaction) {
+                  reconciliations.push({
+                    reportId: input.reportId,
+                    bankTransactionId: documentBankTransaction.id,
+                    crmTransactionId: documentCrmTransaction.id
+                  })
                 }
-                reconciliations.push({
-                  reportId: input.reportId,
-                  bankTransactionId: documentBankTransaction.id,
-                  crmTransactionId: documentCrmTransaction.id
-                })
               } else {
                 reconciliations.push({
                   reportId: input.reportId,
