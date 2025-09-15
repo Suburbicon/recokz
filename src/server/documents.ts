@@ -97,6 +97,7 @@ export const documentsRouter = createTRPCRouter({
             date: string;
             amount: number;
             meta: Record<string, string | number | boolean>;
+            transactionId: string;
           }[]
         >((acc, row, index) => {
           if (index < startRow + 1) return acc;
@@ -127,7 +128,7 @@ export const documentsRouter = createTRPCRouter({
           );
 
           const byCash = row.join(', ').includes('Наличными');
-          
+
           acc.push({
             date: parsedDate.toISOString(),
             amount,
@@ -146,8 +147,9 @@ export const documentsRouter = createTRPCRouter({
               },
               {} as Record<string, string | number>,
             ),
-            'byCash': byCash
-          },
+            'byCash': byCash,
+            },
+            transactionId: row[columnsMap.transactionId]?.toString()
           });
           return acc;
         }, []);
@@ -171,7 +173,7 @@ export const documentsRouter = createTRPCRouter({
         });
 
         // Step 2: Save transactions to database
-        let transactionsData = data.map((transaction) => {
+        const transactionsData = data.map((transaction) => {
           // Convert amount to kopecks (smallest currency unit)
           const amountInKopecks = Math.round(transaction.amount * 100);
 
@@ -180,35 +182,37 @@ export const documentsRouter = createTRPCRouter({
             date: new Date(transaction.date),
             meta: transaction.meta, // Prisma will automatically handle JSON serialization
             documentId: document.id,
+            transactionId: transaction.transactionId,
+            organizationId: ctx.organizationId
           };
         });
 
-        const formattedBankTransactions: typeof transactionsData = [];
-        transactionsData.forEach((transaction, idx) => {
-          const findedDouble = transactionsData.find(
-            (innerTransaction, innerIdx) => {
-              if (
-                transaction.amount === innerTransaction.amount &&
-                transaction.date.getTime() ===
-                  innerTransaction.date.getTime() &&
-                idx !== innerIdx
-              ) {
-                return innerTransaction;
-              }
-            },
-          );
-          if (findedDouble) {
-            formattedBankTransactions.push({
-              ...transaction,
-              amount: transaction.amount + findedDouble.amount,
-            });
-            transactionsData.splice(idx, 1);
-          } else {
-            formattedBankTransactions.push(transaction);
-          }
-        });
+        // const formattedBankTransactions: typeof transactionsData = [];
+        // transactionsData.forEach((transaction, idx) => {
+        //   const findedDouble = transactionsData.find(
+        //     (innerTransaction, innerIdx) => {
+        //       if (
+        //         transaction.amount === innerTransaction.amount &&
+        //         transaction.date.getTime() ===
+        //           innerTransaction.date.getTime() &&
+        //         idx !== innerIdx
+        //       ) {
+        //         return innerTransaction;
+        //       }
+        //     },
+        //   );
+        //   if (findedDouble) {
+        //     formattedBankTransactions.push({
+        //       ...transaction,
+        //       amount: transaction.amount + findedDouble.amount,
+        //     });
+        //     transactionsData.splice(idx, 1);
+        //   } else {
+        //     formattedBankTransactions.push(transaction);
+        //   }
+        // });
 
-        transactionsData = [...formattedBankTransactions];
+        // transactionsData = [...formattedBankTransactions];
 
         // Execute batch transaction creation
         const batchResult = await ctx.prisma.transaction.createMany({

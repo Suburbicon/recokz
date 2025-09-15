@@ -18,7 +18,6 @@ model Organization {
   crmTransactions  CrmTransaction[]
   bankTransactions BankTransaction[]
 
-
   @@map("organizations")
 }
 
@@ -56,7 +55,7 @@ model Document {
   balance  Int          @map("balance")
   link     String       @map("link")
   type     DocumentType @map("type")
-  bankName String?       @map("bankName")
+  bankName String?      @map("bankName")
 
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")
@@ -74,36 +73,38 @@ enum DocumentType {
 }
 
 model Transaction {
-  id     String   @id @default(uuid()) @map("id")
-  amount Int      @map("amount")
-  date   DateTime @map("date")
-  meta   Json     @map("meta")
+  id            String   @id @default(uuid()) @map("id")
+  amount        Int      @map("amount")
+  date          DateTime @map("date")
+  meta          Json     @map("meta")
+  transactionId String?  @map("transactionId")
 
   document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId String?   @map("document_id")
 
-  organization    Organization? @relation(fields: [organizationId], references: [id])
-  organizationId  String?       @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?       @map("organization_id")
 
   createdAt DateTime @default(now()) @map("created_at")
+
+  bankReconciliations Reconciliation[] @relation("CrmTransaction")
+  crmReconciliations  Reconciliation[] @relation("BankTransaction")
 
   @@map("transactions")
 }
 
 model CrmTransaction {
-  id               String             @id @default(uuid()) @map("id")
-  amount           String             @map("amount")
-  date             DateTime           @map("date")
-  meta             Json               @map("meta")
-  transactionId    String             @map("transactionId")
+  id            String   @id @default(uuid()) @map("id")
+  amount        String   @map("amount")
+  date          DateTime @map("date")
+  meta          Json     @map("meta")
+  transactionId String   @map("transactionId")
 
   bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id])
   bankTransactionId String?          @map("bank_transaction_id")
 
-  organization    Organization? @relation(fields: [organizationId], references: [id])
-  organizationId  String?       @map("organization_id")
-
-  reconciliations    Reconciliation[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?       @map("organization_id")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -117,11 +118,10 @@ model BankTransaction {
   meta          Json     @map("meta")
   transactionId String   @map("transactionId")
 
-  organization    Organization? @relation(fields: [organizationId], references: [id])
-  organizationId  String?       @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?       @map("organization_id")
 
-  crmTransaction    CrmTransaction[]
-  reconciliations    Reconciliation[]
+  crmTransaction CrmTransaction[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -134,10 +134,10 @@ model Reconciliation {
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")
 
-  bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id])
+  bankTransaction   Transaction? @relation("BankTransaction", fields: [bankTransactionId], references: [id])
   bankTransactionId String?      @map("bank_transaction_id")
 
-  crmTransaction   CrmTransaction? @relation(fields: [crmTransactionId], references: [id])
+  crmTransaction   Transaction? @relation("CrmTransaction", fields: [crmTransactionId], references: [id])
   crmTransactionId String?      @map("crm_transaction_id")
 
   type   TransactionType? @relation(fields: [typeId], references: [id])

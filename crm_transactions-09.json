@@ -1,0 +1,1333 @@
+[
+    {
+        "id": "d384e108-d318-4938-ba29-45a21144461d",
+        "amount": "7250",
+        "date": "2025-09-09 17:00:00",
+        "meta": {
+            "data": {
+                "id": 530595158,
+                "date": "2025-09-09T21:00:00+0400",
+                "amount": 7250,
+                "client": {
+                    "id": 168898214,
+                    "name": "Умид",
+                    "email": "",
+                    "phone": "+77083573728",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606028453,
+                    "date": "2025-09-09 22:00:00",
+                    "comment": "10тыс предоплата 08.09 \nНазерке",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771725,
+                    "visit_id": 516907711,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516907711,
+                "record_id": 606028453,
+                "document_id": 694053693,
+                "sold_item_id": 12349115,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T20:42:01+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530595158
+        },
+        "transactionId": "694053693",
+        "bank_transaction_id": "6d6c513e-cdae-47d1-905f-dfa2c86e6e20",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 16:42:08.349"
+    },
+    {
+        "id": "e5d412b2-5017-4db5-8623-2bfed285acfd",
+        "amount": "17250",
+        "date": "2025-09-09 17:00:00",
+        "meta": {
+            "data": {
+                "id": 530595159,
+                "date": "2025-09-09T21:00:00+0400",
+                "amount": 17250,
+                "client": {
+                    "id": 168898214,
+                    "name": "Умид",
+                    "email": "",
+                    "phone": "+77083573728",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606028599,
+                    "date": "2025-09-09 22:00:00",
+                    "comment": "НАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2797832,
+                    "visit_id": 516907711,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516907711,
+                "record_id": 606028599,
+                "document_id": 694053863,
+                "sold_item_id": 12349115,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T20:42:01+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530595159
+        },
+        "transactionId": "694053863",
+        "bank_transaction_id": "6d6c513e-cdae-47d1-905f-dfa2c86e6e20",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 16:42:08.471"
+    },
+    {
+        "id": "2bc28c1a-a5d2-4776-84ac-ee3f3e25249f",
+        "amount": "10000",
+        "date": "2025-09-09 17:00:00",
+        "meta": {
+            "data": {
+                "id": 530595091,
+                "date": "2025-09-09T21:00:00+0400",
+                "amount": 10000,
+                "client": {
+                    "id": 168898214,
+                    "name": "Умид",
+                    "email": "",
+                    "phone": "+77083573728",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606028453,
+                    "date": "2025-09-09 22:00:00",
+                    "comment": "10тыс предоплата 08.09 \nНазерке",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771725,
+                    "visit_id": 516907711,
+                    "is_online": false,
+                    "paid_full": 0,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516907711,
+                "record_id": 606028453,
+                "document_id": 694053693,
+                "sold_item_id": 12349115,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T20:41:34+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530595091
+        },
+        "transactionId": "694053693",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 16:41:42.239"
+    },
+    {
+        "id": "55e5e3a8-3a43-4dac-b920-0b44e7cb1350",
+        "amount": "1200",
+        "date": "2025-09-09 17:00:00",
+        "meta": {
+            "data": {
+                "id": 530595157,
+                "date": "2025-09-09T21:00:00+0400",
+                "amount": 1200,
+                "client": {
+                    "id": 168898214,
+                    "name": "Умид",
+                    "email": "",
+                    "phone": "+77083573728",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606028599,
+                    "date": "2025-09-09 22:00:00",
+                    "comment": "НАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2797832,
+                    "visit_id": 516907711,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 7,
+                    "type": 7,
+                    "title": "Product sales"
+                },
+                "supplier": [],
+                "visit_id": 516907711,
+                "record_id": 606028599,
+                "document_id": 694053863,
+                "sold_item_id": 584283334,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T20:42:01+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530595157
+        },
+        "transactionId": "694053863",
+        "bank_transaction_id": "6d6c513e-cdae-47d1-905f-dfa2c86e6e20",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 16:42:08.281"
+    },
+    {
+        "id": "e8151750-1856-4cd2-846e-fb6012e86994",
+        "amount": "10000",
+        "date": "2025-09-09 14:00:00",
+        "meta": {
+            "data": {
+                "id": 530562737,
+                "date": "2025-09-09T18:00:00+0400",
+                "amount": 10000,
+                "client": {
+                    "id": 173391585,
+                    "name": "Нуржан",
+                    "email": "",
+                    "phone": "+77010909290",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 604461776,
+                    "date": "2025-09-09 19:00:00",
+                    "comment": " пилинг головы на первое посещение",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2797832,
+                    "visit_id": 515494692,
+                    "is_online": false,
+                    "paid_full": 0,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564502,
+                    "title": "Халык Банк",
+                    "is_cash": false,
+                    "is_default": true
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 515494692,
+                "record_id": 604461776,
+                "document_id": 692288482,
+                "sold_item_id": 12348958,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T17:48:36+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530562737
+        },
+        "transactionId": "692288482",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 13:48:44.276"
+    },
+    {
+        "id": "043b9698-ed52-49fc-9dc1-083570891e8e",
+        "amount": "38875",
+        "date": "2025-09-09 14:00:00",
+        "meta": {
+            "data": {
+                "id": 530598648,
+                "date": "2025-09-09T18:00:00+0400",
+                "amount": 38875,
+                "client": {
+                    "id": 173391585,
+                    "name": "Нуржан",
+                    "email": "",
+                    "phone": "+77010909290",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 604461776,
+                    "date": "2025-09-09 19:00:00",
+                    "comment": " пилинг головы на первое посещение",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2797832,
+                    "visit_id": 515494692,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564502,
+                    "title": "Халык Банк",
+                    "is_cash": false,
+                    "is_default": true
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 515494692,
+                "record_id": 604461776,
+                "document_id": 692288482,
+                "sold_item_id": 12348958,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T21:04:54+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530598648
+        },
+        "transactionId": "692288482",
+        "bank_transaction_id": "43eedb4c-75fb-4aa4-a784-1b57b0419322",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 17:05:01.509"
+    },
+    {
+        "id": "2cc5414a-a63c-4e57-a992-07d7383124a5",
+        "amount": "48875",
+        "date": "2025-09-09 14:00:00",
+        "meta": {
+            "data": {
+                "id": 530598649,
+                "date": "2025-09-09T18:00:00+0400",
+                "amount": 48875,
+                "client": {
+                    "id": 173391585,
+                    "name": "Нуржан",
+                    "email": "",
+                    "phone": "+77010909290",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 604461851,
+                    "date": "2025-09-09 19:00:00",
+                    "comment": "10000тг халык 29,08",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771725,
+                    "visit_id": 515494692,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564502,
+                    "title": "Халык Банк",
+                    "is_cash": false,
+                    "is_default": true
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 515494692,
+                "record_id": 604461851,
+                "document_id": 692288564,
+                "sold_item_id": 12348958,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T21:04:54+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530598649
+        },
+        "transactionId": "692288564",
+        "bank_transaction_id": "43eedb4c-75fb-4aa4-a784-1b57b0419322",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 17:05:01.138"
+    },
+    {
+        "id": "56bdc950-e607-4546-8b58-21e150d63837",
+        "amount": "42550",
+        "date": "2025-09-09 13:49:56",
+        "meta": {
+            "data": {
+                "id": 530551496,
+                "date": "2025-09-09T17:49:56+0400",
+                "amount": 42550,
+                "client": {
+                    "id": 173743892,
+                    "name": "Асемай",
+                    "email": "",
+                    "phone": "+77004945000",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "НАЗЕРКЕ",
+                "expense": {
+                    "id": 12,
+                    "type": 7,
+                    "title": "Gift cards sale"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 694306949,
+                "sold_item_id": 584239942,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T16:53:17+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530551496
+        },
+        "transactionId": "694306949",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 12:53:25.447"
+    },
+    {
+        "id": "de4a994a-edea-4585-bbbf-db6553238a62",
+        "amount": "1500",
+        "date": "2025-09-09 13:00:00",
+        "meta": {
+            "data": {
+                "id": 530579740,
+                "date": "2025-09-09T17:00:00+0400",
+                "amount": 1500,
+                "client": {
+                    "id": 173714007,
+                    "name": "Мадина",
+                    "email": "",
+                    "phone": "+77086689813",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606070288,
+                    "date": "2025-09-09 18:00:00",
+                    "comment": "10тыс предоплата 08.09\nНАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771455,
+                    "visit_id": 516868964,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516868964,
+                "record_id": 606070288,
+                "document_id": 694100861,
+                "sold_item_id": 12349296,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T19:12:08+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530579740
+        },
+        "transactionId": "694100861",
+        "bank_transaction_id": "0bd3ca92-dd87-4820-886d-afd03f4ae985",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 15:12:15.105"
+    },
+    {
+        "id": "30562434-9224-4673-a4c7-a48c4132ecc8",
+        "amount": "11500",
+        "date": "2025-09-09 13:00:00",
+        "meta": {
+            "data": {
+                "id": 530579741,
+                "date": "2025-09-09T17:00:00+0400",
+                "amount": 11500,
+                "client": {
+                    "id": 173714007,
+                    "name": "Мадина",
+                    "email": "",
+                    "phone": "+77086689813",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606070343,
+                    "date": "2025-09-09 18:00:00",
+                    "comment": "НАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771721,
+                    "visit_id": 516868964,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516868964,
+                "record_id": 606070343,
+                "document_id": 694100922,
+                "sold_item_id": 12349296,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T19:12:08+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530579741
+        },
+        "transactionId": "694100922",
+        "bank_transaction_id": "0bd3ca92-dd87-4820-886d-afd03f4ae985",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 15:12:15.127"
+    },
+    {
+        "id": "3ac3cd6e-9a25-4b76-b47a-044502dac24f",
+        "amount": "10000",
+        "date": "2025-09-09 13:00:00",
+        "meta": {
+            "data": {
+                "id": 530579712,
+                "date": "2025-09-09T17:00:00+0400",
+                "amount": 10000,
+                "client": {
+                    "id": 173714007,
+                    "name": "Мадина",
+                    "email": "",
+                    "phone": "+77086689813",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606070288,
+                    "date": "2025-09-09 18:00:00",
+                    "comment": "10тыс предоплата 08.09\nНАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771455,
+                    "visit_id": 516868964,
+                    "is_online": false,
+                    "paid_full": 0,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516868964,
+                "record_id": 606070288,
+                "document_id": 694100861,
+                "sold_item_id": 12349296,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T19:11:57+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530579712
+        },
+        "transactionId": "694100861",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 15:12:05.691"
+    },
+    {
+        "id": "51ca0ce4-864c-4bab-9241-2eb72df56053",
+        "amount": "19550",
+        "date": "2025-09-09 13:00:00",
+        "meta": {
+            "data": {
+                "id": 530579742,
+                "date": "2025-09-09T17:00:00+0400",
+                "amount": 19550,
+                "client": {
+                    "id": 173714007,
+                    "name": "Мадина",
+                    "email": "",
+                    "phone": "+77086689813",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606070288,
+                    "date": "2025-09-09 18:00:00",
+                    "comment": "10тыс предоплата 08.09\nНАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771455,
+                    "visit_id": 516868964,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516868964,
+                "record_id": 606070288,
+                "document_id": 694100861,
+                "sold_item_id": 12349099,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T19:12:08+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530579742
+        },
+        "transactionId": "694100861",
+        "bank_transaction_id": "0bd3ca92-dd87-4820-886d-afd03f4ae985",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 15:12:16.63"
+    },
+    {
+        "id": "e7f2a20c-ad83-484f-bd4a-4d87089f7c5b",
+        "amount": "19550",
+        "date": "2025-09-09 13:00:00",
+        "meta": {
+            "data": {
+                "id": 530579743,
+                "date": "2025-09-09T17:00:00+0400",
+                "amount": 19550,
+                "client": {
+                    "id": 173714007,
+                    "name": "Мадина",
+                    "email": "",
+                    "phone": "+77086689813",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606070343,
+                    "date": "2025-09-09 18:00:00",
+                    "comment": "НАЗЕРКЕ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771721,
+                    "visit_id": 516868964,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516868964,
+                "record_id": 606070343,
+                "document_id": 694100922,
+                "sold_item_id": 12349099,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T19:12:08+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530579743
+        },
+        "transactionId": "694100922",
+        "bank_transaction_id": "0bd3ca92-dd87-4820-886d-afd03f4ae985",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 15:12:15.368"
+    },
+    {
+        "id": "8fbc33f4-83c5-4ed8-a40a-c25f775900c0",
+        "amount": "20700",
+        "date": "2025-09-09 10:10:36",
+        "meta": {
+            "data": {
+                "id": 530509167,
+                "date": "2025-09-09T14:10:36+0400",
+                "amount": 20700,
+                "client": {
+                    "id": 173735389,
+                    "name": "Мейржан",
+                    "email": "",
+                    "phone": "+77076142657",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "НАЗЕРКЕ",
+                "expense": {
+                    "id": 12,
+                    "type": 7,
+                    "title": "Gift cards sale"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 694245913,
+                "sold_item_id": 584190052,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T13:11:27+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530509167
+        },
+        "transactionId": "694245913",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 09:11:34.613"
+    },
+    {
+        "id": "4b592db4-876a-4280-af9d-128f7f91d667",
+        "amount": "-3350",
+        "date": "2025-09-09 10:05:00",
+        "meta": {
+            "data": {
+                "id": 530781053,
+                "date": "2025-09-09T14:05:00+0400",
+                "amount": -3350,
+                "client": [],
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "дорожные Мадина закуп",
+                "expense": {
+                    "id": 164664,
+                    "type": 4,
+                    "title": "Дорожные расходы"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 0,
+                "sold_item_id": 0,
+                "sold_item_type": null,
+                "last_change_date": "2025-09-11T14:05:52+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530781053
+        },
+        "transactionId": "0",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-11 10:05:58.694"
+    },
+    {
+        "id": "933f599b-5fd6-48b1-888d-3e009648b2fd",
+        "amount": "34500",
+        "date": "2025-09-09 09:20:32",
+        "meta": {
+            "data": {
+                "id": 530500653,
+                "date": "2025-09-09T13:20:32+0400",
+                "amount": 34500,
+                "client": {
+                    "id": 173733594,
+                    "name": "Жамиля",
+                    "email": "",
+                    "phone": "+77005505028",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "НАЗЕРКЕ",
+                "expense": {
+                    "id": 12,
+                    "type": 7,
+                    "title": "Gift cards sale"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 694229953,
+                "sold_item_id": 584177219,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T12:22:26+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530500653
+        },
+        "transactionId": "694229953",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 08:22:34.174"
+    },
+    {
+        "id": "605f034e-dd49-4404-822b-1e66d7d21cdb",
+        "amount": "34500",
+        "date": "2025-09-09 09:20:32",
+        "meta": {
+            "data": {
+                "id": 530500652,
+                "date": "2025-09-09T13:20:32+0400",
+                "amount": 34500,
+                "client": {
+                    "id": 173733594,
+                    "name": "Жамиля",
+                    "email": "",
+                    "phone": "+77005505028",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "НАЗЕРКЕ",
+                "expense": {
+                    "id": 12,
+                    "type": 7,
+                    "title": "Gift cards sale"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 694229953,
+                "sold_item_id": 584177218,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T12:22:26+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530500652
+        },
+        "transactionId": "694229953",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 08:22:34.174"
+    },
+    {
+        "id": "cdd4dec0-568a-4f34-a2b0-48832423816c",
+        "amount": "8750",
+        "date": "2025-09-09 09:00:00",
+        "meta": {
+            "data": {
+                "id": 530508400,
+                "date": "2025-09-09T13:00:00+0400",
+                "amount": 8750,
+                "client": {
+                    "id": 173681777,
+                    "name": "Диля",
+                    "email": "",
+                    "phone": "+77755030222",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 605866476,
+                    "date": "2025-09-09 14:00:00",
+                    "comment": "Т379+доплата",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2797832,
+                    "visit_id": 516692858,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "pink",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2594608,
+                    "title": "Наличными",
+                    "is_cash": true,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516692858,
+                "record_id": 605866476,
+                "document_id": 693873508,
+                "sold_item_id": 12600178,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T13:07:11+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530508400
+        },
+        "transactionId": "693873508",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 09:07:18.792"
+    },
+    {
+        "id": "90655442-44fc-4850-95b6-55c6342bd802",
+        "amount": "8750",
+        "date": "2025-09-09 09:00:00",
+        "meta": {
+            "data": {
+                "id": 530508401,
+                "date": "2025-09-09T13:00:00+0400",
+                "amount": 8750,
+                "client": {
+                    "id": 173681777,
+                    "name": "Диля",
+                    "email": "",
+                    "phone": "+77755030222",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 605866549,
+                    "date": "2025-09-09 14:00:00",
+                    "comment": "Т353серт на 20к+доплата",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771455,
+                    "visit_id": 516692858,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "pink",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2594608,
+                    "title": "Наличными",
+                    "is_cash": true,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516692858,
+                "record_id": 605866549,
+                "document_id": 693873587,
+                "sold_item_id": 12600178,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T13:07:11+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530508401
+        },
+        "transactionId": "693873587",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 09:07:18.792"
+    },
+    {
+        "id": "567e74d8-f887-44b0-bd12-8589c3564e32",
+        "amount": "3450",
+        "date": "2025-09-09 08:00:00",
+        "meta": {
+            "data": {
+                "id": 530495503,
+                "date": "2025-09-09T12:00:00+0400",
+                "amount": 3450,
+                "client": {
+                    "id": 173728092,
+                    "name": "Гулнур",
+                    "email": "",
+                    "phone": "+77078088879",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": {
+                    "id": 606153655,
+                    "date": "2025-09-09 13:00:00",
+                    "comment": "серт Т271+доплата 3450тг ",
+                    "deleted": false,
+                    "prepaid": false,
+                    "staff_id": 2771725,
+                    "visit_id": 516940253,
+                    "is_online": false,
+                    "paid_full": 1,
+                    "activity_id": 0,
+                    "location_id": 1266617,
+                    "custom_color": "pink",
+                    "clients_count": 1,
+                    "attendance_status": 1
+                },
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 5,
+                    "type": 7,
+                    "title": "Service payments"
+                },
+                "supplier": [],
+                "visit_id": 516940253,
+                "record_id": 606153655,
+                "document_id": 694194890,
+                "sold_item_id": 12349045,
+                "sold_item_type": "service",
+                "last_change_date": "2025-09-09T11:50:14+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530495503
+        },
+        "transactionId": "694194890",
+        "bank_transaction_id": "de573589-271f-4a07-939d-e670de2759d2",
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 07:50:22.112"
+    },
+    {
+        "id": "53544174-5c73-46ff-889d-79a835e8f790",
+        "amount": "-12140",
+        "date": "2025-09-09 07:21:00",
+        "meta": {
+            "data": {
+                "id": 530621896,
+                "date": "2025-09-09T11:21:00+0400",
+                "amount": -12140,
+                "client": [],
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "комиссия за снятия денег",
+                "expense": {
+                    "id": 11,
+                    "type": 2,
+                    "title": "Acquiring fee"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 0,
+                "sold_item_id": 0,
+                "sold_item_type": null,
+                "last_change_date": "2025-09-10T11:22:09+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530621896
+        },
+        "transactionId": "0",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-10 07:22:16.08"
+    },
+    {
+        "id": "238036f1-84e9-4cdd-afb4-62a959574974",
+        "amount": "-18850",
+        "date": "2025-09-09 06:39:00",
+        "meta": {
+            "data": {
+                "id": 530487233,
+                "date": "2025-09-09T10:39:00+0400",
+                "amount": -18850,
+                "client": [],
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2594608,
+                    "title": "Наличными",
+                    "is_cash": true,
+                    "is_default": false
+                },
+                "comment": "свечи на продажу",
+                "expense": {
+                    "id": 1,
+                    "type": 1,
+                    "title": "Consumables purchase"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 0,
+                "sold_item_id": 0,
+                "sold_item_type": null,
+                "last_change_date": "2025-09-09T10:40:00+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530487233
+        },
+        "transactionId": "0",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 06:40:09.956"
+    },
+    {
+        "id": "c4deeb34-a9fd-4641-bfd9-d41ec8dda749",
+        "amount": "16100",
+        "date": "2025-09-09 05:50:13",
+        "meta": {
+            "data": {
+                "id": 530481737,
+                "date": "2025-09-09T09:50:13+0400",
+                "amount": 16100,
+                "client": {
+                    "id": 173726794,
+                    "name": "Сания",
+                    "email": "",
+                    "phone": "+77754278036",
+                    "surname": "",
+                    "patronymic": ""
+                },
+                "master": [],
+                "record": null,
+                "account": {
+                    "id": 2564501,
+                    "title": "Каспи",
+                    "is_cash": false,
+                    "is_default": false
+                },
+                "comment": "",
+                "expense": {
+                    "id": 12,
+                    "type": 7,
+                    "title": "Gift cards sale"
+                },
+                "supplier": [],
+                "visit_id": 0,
+                "record_id": 0,
+                "document_id": 694187159,
+                "sold_item_id": 584146032,
+                "sold_item_type": "goods_transaction",
+                "last_change_date": "2025-09-09T08:50:46+0400"
+            },
+            "status": "create",
+            "resource": "finances_operation",
+            "company_id": 1266617,
+            "resource_id": 530481737
+        },
+        "transactionId": "694187159",
+        "bank_transaction_id": null,
+        "organization_id": "f820217d-4383-4970-bc83-cdb0e0ee9603",
+        "created_at": "2025-09-09 04:50:53.788"
+    }
+]

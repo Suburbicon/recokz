@@ -32,9 +32,9 @@ export const reconciliationRouter = createTRPCRouter({
         }
 
         // Get bank and CRM transactions
-        // const bankTransactions = report.documents
-        //   .filter((doc: { type: string }) => doc.type === "bank")
-        //   .flatMap((doc: any) => doc.transactions);
+        const documentBankTransactions = report.documents
+          .filter((doc: { type: string }) => doc.type === "bank")
+          .flatMap((doc: any) => doc.transactions);
 
         const documentCrmTransactions = report.documents
           .filter((doc: { type: string }) => doc.type === "crm")
@@ -44,32 +44,57 @@ export const reconciliationRouter = createTRPCRouter({
         const reconciliations = [];
 
         for (const documentCrmTransaction of documentCrmTransactions) {
-          const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
-            where: {
-              transactionId: documentCrmTransaction.meta.data.document_id.toString(),
-              organizationId: ctx.organizationId
-            },
-            include: {
-              bankTransaction: true
+          try {
+            if (documentCrmTransaction.transactionId) {
+              const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
+                where: {
+                  transactionId: documentCrmTransaction.transactionId?.toString(),
+                  amount: (documentCrmTransaction.amount / 100).toString() // Нужно переделать amount
+                  // organizationId: ctx.organizationId
+                },
+                include: {
+                  bankTransaction: true
+                }
+              })
+              
+              if (crmTransaction?.bankTransactionId) {
+                const documentBankTransaction = documentBankTransactions.find(bt => {
+                  return bt.transactionId == crmTransaction?.bankTransaction?.transactionId
+                })
+                if (!documentBankTransaction) {
+                  console.log(crmTransaction)
+                  console.log(documentBankTransaction)
+                }
+                reconciliations.push({
+                  reportId: input.reportId,
+                  bankTransactionId: documentBankTransaction.id,
+                  crmTransactionId: documentCrmTransaction.id
+                })
+              } else {
+                reconciliations.push({
+                  reportId: input.reportId,
+                  bankTransactionId: null,
+                  crmTransactionId: documentCrmTransaction.id
+                })
+              }
+            } else {
+              reconciliations.push({
+                reportId: input.reportId,
+                bankTransactionId: null,
+                crmTransactionId: documentCrmTransaction.id
+              })
             }
-          })
+          } catch (e) {
+            console.log(e)
+          }
+        }
 
-          if (crmTransaction?.bankTransactionId) {
+        for (const documentBankTransaction of documentBankTransactions) {
+          const findedDocumentBankTransaction = reconciliations.find(r => r.bankTransactionId === documentBankTransaction.id)
+          if (!findedDocumentBankTransaction) {
             reconciliations.push({
               reportId: input.reportId,
-              bankTransactionId: crmTransaction.bankTransactionId,
-              crmTransactionId: crmTransaction.id
-            })
-          } else if (crmTransaction) {
-            reconciliations.push({
-              reportId: input.reportId,
-              bankTransactionId: null,
-              crmTransactionId: crmTransaction.id
-            })
-          } else {
-            reconciliations.push({
-              reportId: input.reportId,
-              bankTransactionId: null,
+              bankTransactionId: documentBankTransaction.id,
               crmTransactionId: null
             })
           }
@@ -164,6 +189,61 @@ export const reconciliationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Ошибка при выполнении сверки",
+          cause: error,
+        });
+      }
+    }),
+
+  updateReconcile: protectedProcedure
+    .input(
+      z.object({
+        reconciliationId: z.string(),
+        crmTransactionsIds: z.array(z.string()),
+        bankTransactionId: z.string()
+      })
+    )
+    .mutation(async ({ctx, input}) => {
+      try {
+        const reconciliation = await ctx.prisma.reconciliation.findFirst({
+          where: {
+            id: input.reconciliationId,
+            bankTransactionId: input.bankTransactionId
+          }
+        })
+        for (const crmTransactionId of input.crmTransactionsIds) {
+          if (reconciliation?.crmTransactionId) {
+            ctx.prisma.reconciliation.create({
+              data: {
+                createdAt: reconciliation.createdAt,
+                bankTransactionId: reconciliation.bankTransactionId,
+                reportId: reconciliation.reportId,
+                typeId: reconciliation.typeId,
+                crmTransactionId: crmTransactionId
+              }
+            })
+          } else {
+            console.log("CRM TRANSACTION ", crmTransactionId)
+            await ctx.prisma.reconciliation.update({
+              where: {
+                id: input.reconciliationId,
+                bankTransactionId: input.bankTransactionId
+              },
+              data: {
+                crmTransactionId: crmTransactionId
+              }
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error updating reconciliation:", error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Ошибка при сверки",
           cause: error,
         });
       }

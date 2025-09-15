@@ -9,10 +9,11 @@ const PROMPT = `
     2. Time — it can be a separate column or can be written together with date.
     3. Amount — "Сумма операции", "Сумма", "Сумма к зачислению/ списанию (т)", "Итого", "Дебет", "Кредит" or other words with the same meaning, if there are several, prioritize them with the most appropriate one at the beginning.
     4. IsIncome — it is true.
+    5. transactionId - it can be "№ Документа", "Номер операции".
 
     If there is only one time column, always set it to date and leave time empty, date should not be empty and time should have a value.
     
-    Respond in this JSON format: \{ "date": <column index>, "time": <column index>, "amount": <column index> or <column index[]>, isIncome: boolean or boolean[] }\
+    Respond in this JSON format: \{ "date": <column index>, "time": <column index>, "amount": <column index> or <column index[]>, isIncome: boolean or boolean[], transactionId: <column index> }\
     
     Don't write comments.
 
@@ -24,6 +25,7 @@ type Column = {
   time: number;
   amount: number | number[];
   isIncome: boolean | boolean[];
+  transactionId: number;
 };
 
 export const detectTableColumns = async (row: string[]): Promise<Column> => {

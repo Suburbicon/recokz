@@ -1,20 +1,50 @@
 import { api } from "@/shared/lib/trpc/client";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import { CheckCircle, XCircle, DollarSign } from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import { Prisma, Transaction } from "@prisma/client";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/ui/dialog";
+import { toast } from 'sonner';
+import { ReconciliationRow } from "./components/ReconciliationRow";
+
+const reconciliationWithRelations = {
+  include: {
+    bankTransaction: true,
+    crmTransaction: true,
+    type: true,
+  },
+};
+
+type ReconciliationWithRelations = Prisma.ReconciliationGetPayload<
+  typeof reconciliationWithRelations
+>;
 
 export const ImportSales = () => {
   const params = useParams<{ id: string }>();
+  const [isModalReconciliationDetailOpen, setIsModalReconciliationDetailOpen] = useState(false);
+  const [isModalReconciliationCreateOpen, setIsModalReconciliationCreateOpen] = useState(false);
+  const [currentBankReconciliation, setCurrentBankReconciliation] = useState<ReconciliationWithRelations>();
+  const [pickedCrmTransactions, setPickedCrmTransactions] = useState<string[]>([]);
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
   });
+
+  const { 
+    mutateAsync: updateBankReconciliation, 
+    isPending: isUpdatingBankReconciliation 
+  } = api.reconciliation.updateReconcile.useMutation({
+    onSuccess: () => {
+      utils.reports.getById.invalidate({ id: params.id });
+    }
+  })
 
   const { data: transactionTypes } = api.transactionType.getAll.useQuery({
     category: "income",
@@ -110,6 +140,53 @@ export const ImportSales = () => {
     return new Date();
   };
 
+  const filterByDateReconciliations = (a: ReconciliationWithRelations, b: ReconciliationWithRelations) => {
+    // Sort by transaction date (newest first), then by reconciliation ID for stability
+    const dateA = getTransactionDate(a);
+    const dateB = getTransactionDate(b);
+    
+    const dateDiff = new Date(dateB).getTime() - new Date(dateA).getTime();
+    if (dateDiff !== 0) return dateDiff;
+
+    // If dates are the same, sort by reconciliation ID for consistent ordering
+    return a.id.localeCompare(b.id);
+  }
+
+  const incomeBankReconciliations = report.reconciliations
+    .filter((reconciliation) => {
+      if (
+        reconciliation.bankTransaction &&
+        reconciliation.bankTransaction.amount > 0
+      ) {
+        return true;
+      }
+
+      return false;
+    })
+    .sort(filterByDateReconciliations);
+
+  const incomeCrmReconciliations = report.reconciliations
+    .filter((reconciliation) => {
+      if (
+        reconciliation.crmTransaction &&
+        reconciliation.crmTransaction.amount > 0
+      ) {
+        return true;
+      }
+      return false;
+    })
+    .sort(filterByDateReconciliations);
+
+  const notReconciliatedCrmTransactions = report.reconciliations
+    .filter((reconciliation) => {
+      if (
+        !reconciliation.bankTransaction &&
+        reconciliation.crmTransaction?.amount &&
+        reconciliation.crmTransaction?.amount > 0
+      ) return true
+      return false
+    })
+
   // Filter reconciliations with positive amounts (income transactions)
   const incomeReconciliations = report.reconciliations
     .filter((reconciliation) => {
@@ -129,90 +206,64 @@ export const ImportSales = () => {
       }
       return false;
     })
-    .sort((a, b) => {
-      // Sort by transaction date (newest first), then by reconciliation ID for stability
-      const dateA = getTransactionDate(a);
-      const dateB = getTransactionDate(b);
-
-      const dateDiff = new Date(dateB).getTime() - new Date(dateA).getTime();
-      if (dateDiff !== 0) return dateDiff;
-
-      // If dates are the same, sort by reconciliation ID for consistent ordering
-      return a.id.localeCompare(b.id);
-    });
+    .sort(filterByDateReconciliations);
 
   const getTransactionAmount = (reconciliation: any) => {
     // Prefer bank transaction amount, fallback to CRM transaction amount
-    if (
-      reconciliation.bankTransaction &&
-      reconciliation.bankTransaction.amount > 0
-    ) {
-      return reconciliation.bankTransaction.amount;
-    }
-    if (
-      reconciliation.crmTransaction &&
-      reconciliation.crmTransaction.amount > 0
-    ) {
-      return reconciliation.crmTransaction.amount;
-    }
-    return 0;
+      if (
+        reconciliation.bankTransaction &&
+        reconciliation.bankTransaction.amount > 0
+      ) {
+        return reconciliation.bankTransaction.amount;
+      }
+      if (
+        reconciliation.crmTransaction &&
+        reconciliation.crmTransaction.amount > 0
+      ) {
+        return reconciliation.crmTransaction.amount;
+      }
+      return 0;
   };
 
-  const isMatched = (reconciliation: any) => {
-    return reconciliation.bankTransaction && reconciliation.crmTransaction;
+  const handleViewTransactions = (reconciliation: ReconciliationWithRelations) => {
+    setIsModalReconciliationDetailOpen(true);
+    setCurrentBankReconciliation(reconciliation);
+  }
+
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalReconciliationDetailOpen(open);
   };
 
-  const isResolved = (reconciliation: any) => {
-    // Consider resolved if it's either fully matched OR has a transaction type assigned
-    return isMatched(reconciliation) || !!reconciliation.typeId;
+  const handleReconciliationCreate = (reconciliation: ReconciliationWithRelations) => {
+    setIsModalReconciliationCreateOpen(true);
+    setCurrentBankReconciliation(reconciliation);
   };
 
-  const getStatusText = (reconciliation: any) => {
-    if (isMatched(reconciliation)) {
-      return "Сверено";
-    } else if (reconciliation.typeId) {
-      return "Сверено";
-    } else if (reconciliation.crmTransaction?.meta.byCash) {
-      return "Наличными";
-    } else {
-      return "Не сверено";
+  const handleModalReconciliationCreateChange = (open: boolean) => {
+    setIsModalReconciliationCreateOpen(open);
+  }
+
+  const handlePickCrmTransactions = (transactionId: string) => {
+    if (pickedCrmTransactions.includes(transactionId)) {
+      setPickedCrmTransactions(prev => prev.filter(tId => tId !== transactionId))
+      return
     }
-  };
 
-  const getStatusColor = (reconciliation: any) => {
-    if (isResolved(reconciliation)) {
-      return "text-green-600 dark:text-green-400";
-    } else if (reconciliation.crmTransaction?.meta.byCash) {
-      return "text-blue-600 dark:text-blue-400";
-    } else {
-      return "text-yellow-600 dark:text-yellow-400";
-    }
-  };
+    setPickedCrmTransactions(prev => [...prev, transactionId])
+  }
 
-  const getIconAndBgColor = (reconciliation: any) => {
-    if (isResolved(reconciliation)) {
-      return {
-        bg: "bg-green-100 dark:bg-green-900/30",
-        icon: (
-          <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-        ),
-      };
-    } else if (reconciliation.crmTransaction?.meta.byCash) {
-      return {
-        bg: "bg-blue-100 dark:bg-blue-900/30",
-        icon: (
-          <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-        ),
-      };
-    } else {
-      return {
-        bg: "bg-yellow-100 dark:bg-yellow-900/30",
-        icon: (
-          <XCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-        ),
-      };
+  const handleCreateNewReconciliation = async () => {
+    if (currentBankReconciliation && currentBankReconciliation.bankTransactionId) {
+      console.log(pickedCrmTransactions)
+      await updateBankReconciliation({
+        reconciliationId: currentBankReconciliation.id,
+        crmTransactionsIds: pickedCrmTransactions,
+        bankTransactionId: currentBankReconciliation.bankTransactionId
+      })
+
+      toast.success('Транзакция успешно сверилась');
     }
-  };
+  }
 
   const totalIncome = incomeReconciliations.reduce((sum, reconciliation) => {
     return sum + getTransactionAmount(reconciliation);
@@ -260,86 +311,26 @@ export const ImportSales = () => {
         </div>
       </div>
 
-      {incomeReconciliations.length > 0 ? (
+      {incomeBankReconciliations.length > 0 ? (
         <div>
           <h3 className="text-lg font-medium mb-3">
-            Транзакции доходов ({incomeReconciliations.length})
+            Банковские транзакции доходов ({incomeBankReconciliations.length})
           </h3>
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-96 overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {incomeReconciliations.map((reconciliation) => (
-                  <div
+                {incomeBankReconciliations.map((reconciliation) => (
+                  <ReconciliationRow
                     key={reconciliation.id}
-                    className="flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            getIconAndBgColor(reconciliation).bg
-                          }`}
-                        >
-                          {getIconAndBgColor(reconciliation).icon}
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-gray-100">
-                                {formatBalance(
-                                  getTransactionAmount(reconciliation),
-                                )}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatDate(getTransactionDate(reconciliation))}
-                              </p>
-                            </div>
-
-                            <div className="text-xs">
-                              <p
-                                className={`font-medium ${getStatusColor(reconciliation)}`}
-                              >
-                                {getStatusText(reconciliation)}
-                              </p>
-                              <p className="text-gray-500 dark:text-gray-400">
-                                {getSourceAndType(reconciliation)}
-                              </p>
-                            </div>
-                          </div>
-
-                          {!isResolved(reconciliation) && (
-                            <div className="flex-shrink-0">
-                              <Select
-                                value={reconciliation.typeId || ""}
-                                onValueChange={(value) =>
-                                  handleTypeChange(reconciliation.id, value)
-                                }
-                                disabled={isUpdatingReconciliation}
-                              >
-                                <SelectTrigger className="w-32 h-7 text-xs">
-                                  <SelectValue placeholder="Тип" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {transactionTypes?.map((type) => (
-                                    <SelectItem key={type.id} value={type.id}>
-                                      {type.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-gray-400 dark:text-gray-500 ml-3 flex-shrink-0">
-                      {reconciliation.id.slice(0, 6)}
-                    </div>
-                  </div>
+                    reconciliation={reconciliation}
+                    transactionTypes={transactionTypes}
+                    updateReconciliation={updateReconciliation}
+                    isUpdatingReconciliation={isUpdatingReconciliation}
+                    handleViewTransactions={handleViewTransactions}
+                    handleReconciliationCreate={handleReconciliationCreate}
+                    type="bank"
+                    isMini={false}
+                  />
                 ))}
               </div>
             </div>
@@ -357,6 +348,43 @@ export const ImportSales = () => {
         </div>
       )}
 
+      {incomeCrmReconciliations.length > 0 ? (
+        <div>
+          <h3 className="text-lg font-medium mb-3">
+            CRM транзакции доходов ({incomeCrmReconciliations.length})
+          </h3>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="max-h-96 overflow-y-auto scrollbar-hide">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {incomeCrmReconciliations.map((reconciliation) => (
+                  <ReconciliationRow
+                    key={reconciliation.id}
+                    reconciliation={reconciliation}
+                    transactionTypes={transactionTypes}
+                    updateReconciliation={updateReconciliation}
+                    isUpdatingReconciliation={isUpdatingReconciliation}
+                    handleViewTransactions={handleViewTransactions}
+                    handleReconciliationCreate={handleReconciliationCreate}
+                    type="crm"
+                    isMini={false}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            Нет доходных CRM транзакций
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Доходные CRM транзакции появятся после загрузки и сверки документов
+          </p>
+        </div>
+      )}
+
       {/* Next Button */}
       <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
@@ -367,6 +395,136 @@ export const ImportSales = () => {
           {isUpdatingReport ? "Обновление..." : "Далее"}
         </button>
       </div>
+
+      <Dialog open={isModalReconciliationDetailOpen} onOpenChange={handleModalOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Транзакция</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
+            {(
+              <div>
+                <div className="pt-3">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Банковские метаданные:
+                  </h4>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    {currentBankReconciliation?.bankTransaction?.meta &&
+                    typeof currentBankReconciliation.bankTransaction.meta === "object" ? (
+                      Object.entries(currentBankReconciliation.bankTransaction.meta).map(
+                        ([key, value]) => (
+                          <div
+                            key={key}
+                            className="flex justify-between items-start"
+                          >
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                              {key}:
+                            </span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                              {typeof value === "object"
+                                ? JSON.stringify(value)
+                                : String(value)}
+                            </span>
+                          </div>
+                        ),
+                      )
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Нет доступных метаданных
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="pt-3">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    CRM метаданные:
+                  </h4>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    {currentBankReconciliation?.crmTransaction?.meta &&
+                    typeof currentBankReconciliation.crmTransaction.meta === "object" ? (
+                      Object.entries(currentBankReconciliation.crmTransaction.meta).map(
+                        ([key, value]) => (
+                          <div
+                            key={key}
+                            className="flex justify-between items-start"
+                          >
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                              {key}:
+                            </span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                              {typeof value === "object"
+                                ? JSON.stringify(value)
+                                : String(value)}
+                            </span>
+                          </div>
+                        ),
+                      )
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Нет доступных метаданных
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <div className="flex justify-between items-center w-full">
+              
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isModalReconciliationCreateOpen} onOpenChange={handleModalReconciliationCreateChange}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Транзакция</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
+            {(currentBankReconciliation?.bankTransaction) && (
+              <div className="pt-3">
+                <p className="text-lg font-bold">Банковская транзакция</p>
+                {formatBalance(currentBankReconciliation.bankTransaction.amount)}
+              </div>
+            )}
+
+            <p className="my-2 text-lg font-bold">CRM транзакции</p>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+              <div className="max-h-96 overflow-y-auto scrollbar-hide">
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {notReconciliatedCrmTransactions.map((reconciliation) => (
+                    <ReconciliationRow
+                      key={reconciliation.id}
+                      reconciliation={reconciliation}
+                      transactionTypes={transactionTypes}
+                      updateReconciliation={updateReconciliation}
+                      isUpdatingReconciliation={isUpdatingReconciliation}
+                      handleViewTransactions={handleViewTransactions}
+                      handleReconciliationCreate={handleReconciliationCreate}
+                      pickedCrmTransactions={pickedCrmTransactions}
+                      handlePickCrmTransactions={handlePickCrmTransactions}
+                      type="crm"
+                      isMini={true}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex flex-col w-full space-y-3">              
+              <Button 
+                size="sm"
+                onClick={handleCreateNewReconciliation}
+              >
+                Сохранить
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
