@@ -149,7 +149,7 @@ export const documentsRouter = createTRPCRouter({
             ),
             'byCash': byCash,
             },
-            transactionId: row[columnsMap.transactionId]?.toString()
+            transactionId: (row[columnsMap.transactionId] || 0).toString()
           });
           return acc;
         }, []);
