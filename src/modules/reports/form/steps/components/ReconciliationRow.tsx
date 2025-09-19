@@ -298,6 +298,10 @@ export const ReconciliationRow = ({
                                 </div>
                             </div>
                         </div>
+
+                        <Button size="sm" onClick={() => handleViewTransactions(reconciliation)}>
+                            Детали
+                        </Button>
                     </div>
                 </div>
             )}

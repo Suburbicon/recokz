@@ -86,7 +86,7 @@ export const documentsRouter = createTRPCRouter({
 
         const startRow = await ai.detectTableStartRow(previewRows);
         
-        const bank = await ai.detectBank(input.fileName);
+        const bank = await ai.detectBank(previewRows);
 
         const headerRow = rows[startRow];
         
@@ -151,6 +151,10 @@ export const documentsRouter = createTRPCRouter({
             },
             transactionId: (row[columnsMap.transactionId] || 0).toString()
           });
+
+          if (bank === 'Kaspi' || bank === 'Halyk') {
+            acc[acc.length - 1].meta.bank = bank
+          }
           return acc;
         }, []);
 

@@ -42,66 +42,56 @@ export const reconciliationRouter = createTRPCRouter({
 
 
         const reconciliations = [];
+        const unreconciledBankTransactions = []
 
-        for (const documentCrmTransaction of documentCrmTransactions) {
+        for (const documentBankTransaction of documentBankTransactions) {
           try {
-            if (documentCrmTransaction.transactionId) {
-              const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
-                where: {
-                  transactionId: documentCrmTransaction.transactionId.toString(),
-                  amount: (documentCrmTransaction.amount / 100).toString() // Нужно переделать amount
-                  // organizationId: ctx.organizationId
-                },
-                include: {
-                  bankTransaction: true
-                }
-              })
-
-              if (documentCrmTransaction.transactionId.toString() === '694053863') {
-                console.log(crmTransaction)
+            const bankTransaction = await ctx.prisma.bankTransaction.findFirst({
+              where: {
+                transactionId: documentBankTransaction.transactionId.toString(),
+                organizationId: ctx.organizationId
+              },
+              include: {
+                crmTransaction: true
               }
-              
-              if (crmTransaction?.bankTransactionId) {
-                const documentBankTransaction = documentBankTransactions.find(bt => {
-                  return bt.transactionId == crmTransaction?.bankTransaction?.transactionId
-                })
+            })
 
-                if (documentCrmTransaction.transactionId.toString() === '694053863') {
-                  console.log(documentBankTransaction)
-                }
-
-                if (documentBankTransaction) {
-                  if (documentCrmTransaction.transactionId.toString() === '694053863') {
-                    console.log(documentBankTransaction)
-                  }
-                  reconciliations.push({
-                    reportId: input.reportId,
-                    bankTransactionId: documentBankTransaction.id,
-                    crmTransactionId: documentCrmTransaction.id
-                  })
-                }
-              } else {
+            if (bankTransaction?.crmTransaction) {
+              for (const crmTransaction of bankTransaction.crmTransaction) {
                 reconciliations.push({
                   reportId: input.reportId,
-                  bankTransactionId: null,
-                  crmTransactionId: documentCrmTransaction.id
+                  bankTransactionId: documentBankTransaction.id,
+                  crmTransactionId: documentCrmTransactions.find(c => 
+                    (c.amount / 100).toString() === crmTransaction.amount &&
+                    c.transactionId === crmTransaction.transactionId
+                  ).id
                 })
               }
             } else {
-              reconciliations.push({
-                reportId: input.reportId,
-                bankTransactionId: null,
-                crmTransactionId: documentCrmTransaction.id
-              })
+              unreconciledBankTransactions.push(documentBankTransaction)
             }
-          } catch (e) {
-            console.log(e)
+          } catch (error) {
+            console.log(error)
           }
         }
 
-        for (const documentBankTransaction of documentBankTransactions) {
-          const findedDocumentBankTransaction = reconciliations.find(r => r.bankTransactionId === documentBankTransaction.id)
-          if (!findedDocumentBankTransaction) {
+        for (const documentBankTransaction of unreconciledBankTransactions) {
+          const matchingCrmTransaction = documentCrmTransactions.find(
+            (crmTx: any) =>
+              crmTx.amount === documentBankTransaction.amount &&
+              Math.abs(
+                new Date(crmTx.date).getTime() -
+                  new Date(documentBankTransaction.date).getTime(),
+              ) <
+                24 * 60 * 60 * 1000, // Within 24 hours
+          );
+          if (matchingCrmTransaction) {
+            reconciliations.push({
+              reportId: input.reportId,
+              bankTransactionId: documentBankTransaction.id,
+              crmTransactionId: matchingCrmTransaction.id
+            })
+          } else {
             reconciliations.push({
               reportId: input.reportId,
               bankTransactionId: documentBankTransaction.id,
@@ -109,6 +99,73 @@ export const reconciliationRouter = createTRPCRouter({
             })
           }
         }
+
+        for (const documentCrmTransaction of documentCrmTransactions) {
+            const findedDocumentCrmTransaction = reconciliations.find(r => r.crmTransactionId === documentCrmTransaction.id)
+            if (!findedDocumentCrmTransaction) {
+              reconciliations.push({
+                reportId: input.reportId,
+                bankTransactionId: null,
+                crmTransactionId: documentCrmTransaction.id
+              })
+            }
+        }
+
+        // for (const documentCrmTransaction of documentCrmTransactions) {
+        //   try {
+        //     if (documentCrmTransaction.transactionId) {
+        //       const crmTransaction = await ctx.prisma.crmTransaction.findFirst({
+        //         where: {
+        //           transactionId: documentCrmTransaction.transactionId.toString(),
+        //           amount: (documentCrmTransaction.amount / 100).toString() // Нужно переделать amount
+        //           // organizationId: ctx.organizationId
+        //         },
+        //         include: {
+        //           bankTransaction: true
+        //         }
+        //       })
+              
+        //       if (crmTransaction?.bankTransactionId) {
+        //         const documentBankTransaction = documentBankTransactions.find(bt => {
+        //           return bt.transactionId == crmTransaction?.bankTransaction?.transactionId
+        //         })
+
+        //         if (documentBankTransaction) {
+        //           reconciliations.push({
+        //             reportId: input.reportId,
+        //             bankTransactionId: documentBankTransaction.id,
+        //             crmTransactionId: documentCrmTransaction.id
+        //           })
+        //         }
+        //       } else {
+        //         reconciliations.push({
+        //           reportId: input.reportId,
+        //           bankTransactionId: null,
+        //           crmTransactionId: documentCrmTransaction.id
+        //         })
+        //       }
+        //     } else {
+        //       reconciliations.push({
+        //         reportId: input.reportId,
+        //         bankTransactionId: null,
+        //         crmTransactionId: documentCrmTransaction.id
+        //       })
+        //     }
+        //   } catch (e) {
+        //     console.log(e)
+        //   }
+        // }
+
+        // for (const documentBankTransaction of documentBankTransactions) {
+        //   const findedDocumentBankTransaction = reconciliations.find(r => r.bankTransactionId === documentBankTransaction.id)
+        //   if (!findedDocumentBankTransaction) {
+        //     reconciliations.push({
+        //       reportId: input.reportId,
+        //       bankTransactionId: documentBankTransaction.id,
+        //       crmTransactionId: null
+        //     })
+        //   }
+        // }
 
         // First pass: Find matched transactions
         // for (const bankTransaction of bankTransactions) {
