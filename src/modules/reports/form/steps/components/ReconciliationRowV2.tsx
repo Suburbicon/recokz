@@ -144,9 +144,9 @@ export const ReconciliationRowV2 = ({
         });
     };
 
-    const getSourceAndType = (reconciliations: ReconciliationWithRelations[]) => {
+    const getSourceAndType = (reconciliations: any) => {
         const source =
-        reconciliations.every(r => r.bankTransaction && r.crmTransaction)
+        reconciliations.every((r: any) => r.bankTransaction && r.crmTransaction)
             ? "Банк + CRM"
             : reconciliations[0].bankTransaction
             ? reconciliations[0].bankTransaction.document.name
