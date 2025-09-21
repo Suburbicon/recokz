@@ -3,6 +3,7 @@ import { protectedProcedure } from "@/shared/lib/trpc/server";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Transaction } from "@prisma/client";
+import { isNull } from "util";
 
 export const reconciliationRouter = createTRPCRouter({
   reconcile: protectedProcedure
@@ -39,7 +40,6 @@ export const reconciliationRouter = createTRPCRouter({
         const documentCrmTransactions = report.documents
           .filter((doc: { type: string }) => doc.type === "crm")
           .flatMap((doc: any) => doc.transactions);
-
 
         const reconciliations = [];
         const unreconciledBankTransactions = []
@@ -83,7 +83,7 @@ export const reconciliationRouter = createTRPCRouter({
                 new Date(crmTx.date).getTime() -
                   new Date(documentBankTransaction.date).getTime(),
               ) <
-                24 * 60 * 60 * 1000, // Within 24 hours
+                24 * 60 * 60 * 1000 // Within 24 hours
           );
           if (matchingCrmTransaction) {
             reconciliations.push({
@@ -91,6 +91,11 @@ export const reconciliationRouter = createTRPCRouter({
               bankTransactionId: documentBankTransaction.id,
               crmTransactionId: matchingCrmTransaction.id
             })
+
+            const index = documentCrmTransactions.findIndex(
+              el => el.id === matchingCrmTransaction.id
+            )
+            documentCrmTransactions.splice(index, 1);
           } else {
             reconciliations.push({
               reportId: input.reportId,
@@ -101,14 +106,14 @@ export const reconciliationRouter = createTRPCRouter({
         }
 
         for (const documentCrmTransaction of documentCrmTransactions) {
-            const findedDocumentCrmTransaction = reconciliations.find(r => r.crmTransactionId === documentCrmTransaction.id)
-            if (!findedDocumentCrmTransaction) {
-              reconciliations.push({
-                reportId: input.reportId,
-                bankTransactionId: null,
-                crmTransactionId: documentCrmTransaction.id
-              })
-            }
+          const findedDocumentCrmTransaction = reconciliations.find(r => r.crmTransactionId === documentCrmTransaction.id)
+          if (!findedDocumentCrmTransaction) {
+            reconciliations.push({
+              reportId: input.reportId,
+              bankTransactionId: null,
+              crmTransactionId: documentCrmTransaction.id
+            })
+          }
         }
 
         // for (const documentCrmTransaction of documentCrmTransactions) {
@@ -271,36 +276,24 @@ export const reconciliationRouter = createTRPCRouter({
     )
     .mutation(async ({ctx, input}) => {
       try {
-        const reconciliation = await ctx.prisma.reconciliation.findFirst({
+        for (const crmTransactionId of input.crmTransactionsIds) {
+          await ctx.prisma.reconciliation.updateMany({
+            where: {
+              crmTransactionId: crmTransactionId
+            },
+            data: {
+              bankTransactionId: input.bankTransactionId
+            }
+          })
+        }
+
+        await ctx.prisma.reconciliation.delete({
           where: {
             id: input.reconciliationId,
-            bankTransactionId: input.bankTransactionId
+            bankTransactionId: input.bankTransactionId,
+            crmTransactionId: null
           }
         })
-        for (const crmTransactionId of input.crmTransactionsIds) {
-          if (reconciliation?.crmTransactionId) {
-            ctx.prisma.reconciliation.create({
-              data: {
-                createdAt: reconciliation.createdAt,
-                bankTransactionId: reconciliation.bankTransactionId,
-                reportId: reconciliation.reportId,
-                typeId: reconciliation.typeId,
-                crmTransactionId: crmTransactionId
-              }
-            })
-          } else {
-            console.log("CRM TRANSACTION ", crmTransactionId)
-            await ctx.prisma.reconciliation.update({
-              where: {
-                id: input.reconciliationId,
-                bankTransactionId: input.bankTransactionId
-              },
-              data: {
-                crmTransactionId: crmTransactionId
-              }
-            })
-          }
-        }
       } catch (error) {
         console.error("Error updating reconciliation:", error);
 

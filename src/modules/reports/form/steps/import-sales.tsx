@@ -276,6 +276,8 @@ export const ImportSales = () => {
         bankTransactionId: currentBankReconciliation.bankTransactionId
       })
 
+      setIsModalReconciliationCreateOpen(false);
+      setPickedCrmTransactions([])
       toast.success('Транзакция успешно сверилась');
     }
   }
@@ -352,7 +354,7 @@ export const ImportSales = () => {
           <h3 className="text-lg font-medium mb-3">
             Банковские транзакции ({Object.values(bankReconciliations).length})
           </h3>
-          <div className="w-[60%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="w-[100%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {Object.values(bankReconciliations).map((reconciliations) => (

@@ -170,10 +170,10 @@ export const ReconciliationRowV2 = ({
     const getTransactionDate = (reconciliation: any) => {
         // Prefer bank transaction date, fallback to CRM transaction date
         if (reconciliation.bankTransaction) {
-        return reconciliation.bankTransaction.date;
+            return reconciliation.bankTransaction.date;
         }
         if (reconciliation.crmTransaction) {
-        return reconciliation.crmTransaction.date;
+            return reconciliation.crmTransaction.date;
         }
         return new Date();
     };
