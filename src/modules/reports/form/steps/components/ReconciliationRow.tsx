@@ -125,16 +125,14 @@ export const ReconciliationRow = ({
         // Prefer bank transaction amount, fallback to CRM transaction amount
         if (type === 'bank') {
             if (
-                reconciliation.bankTransaction &&
-                reconciliation.bankTransaction.amount > 0
+                reconciliation.bankTransaction
             ) {
                 return reconciliation.bankTransaction.amount;
             }
             return 0;
         }
         if (
-            reconciliation.crmTransaction &&
-            reconciliation.crmTransaction.amount > 0
+            reconciliation.crmTransaction
         ) {
             return reconciliation.crmTransaction.amount;
         }

@@ -18,6 +18,7 @@ export const documentsRouter = createTRPCRouter({
         fileContent: z.string(), // base64 encoded file content
         fileSize: z.number(),
         mimeType: z.string(),
+        bankName: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -85,8 +86,6 @@ export const documentsRouter = createTRPCRouter({
         const previewRows = rows.slice(0, 20);
 
         const startRow = await ai.detectTableStartRow(previewRows);
-        
-        const bank = await ai.detectBank(previewRows);
 
         const headerRow = rows[startRow];
         
@@ -152,8 +151,8 @@ export const documentsRouter = createTRPCRouter({
             transactionId: (row[columnsMap.transactionId] || 0).toString()
           });
 
-          if (bank === 'Kaspi' || bank === 'Halyk') {
-            acc[acc.length - 1].meta.bank = bank
+          if (input.bankName !== 'CRM') {
+            acc[acc.length - 1].meta.bank = input.bankName
           }
           return acc;
         }, []);
@@ -170,8 +169,8 @@ export const documentsRouter = createTRPCRouter({
             name: input.fileName,
             balance: totalBalance,
             link: `uploads/${input.reportId}/${input.fileName}`, // Could be updated to actual file storage path
-            type: bank ? "bank" : "crm",
-            bankName: bank,
+            type: input.bankName !== 'CRM' ? "bank" : "crm",
+            bankName: input.bankName,
             reportId: input.reportId,
           },
         });
@@ -191,33 +190,6 @@ export const documentsRouter = createTRPCRouter({
           };
         });
 
-        // const formattedBankTransactions: typeof transactionsData = [];
-        // transactionsData.forEach((transaction, idx) => {
-        //   const findedDouble = transactionsData.find(
-        //     (innerTransaction, innerIdx) => {
-        //       if (
-        //         transaction.amount === innerTransaction.amount &&
-        //         transaction.date.getTime() ===
-        //           innerTransaction.date.getTime() &&
-        //         idx !== innerIdx
-        //       ) {
-        //         return innerTransaction;
-        //       }
-        //     },
-        //   );
-        //   if (findedDouble) {
-        //     formattedBankTransactions.push({
-        //       ...transaction,
-        //       amount: transaction.amount + findedDouble.amount,
-        //     });
-        //     transactionsData.splice(idx, 1);
-        //   } else {
-        //     formattedBankTransactions.push(transaction);
-        //   }
-        // });
-
-        // transactionsData = [...formattedBankTransactions];
-
         // Execute batch transaction creation
         const batchResult = await ctx.prisma.transaction.createMany({
           data: transactionsData,
@@ -231,7 +203,7 @@ export const documentsRouter = createTRPCRouter({
           mimeType: input.mimeType,
           bufferSize: fileBuffer.length,
           documentId: document.id,
-          documentType: bank ? DocumentType.bank : DocumentType.crm,
+          documentType: input.bankName !== 'CRM' ? DocumentType.bank : DocumentType.crm,
           transactionsCount: batchResult.count,
           totalBalance: totalBalance,
           data: data.map((transaction) => ({
@@ -326,6 +298,7 @@ export const documentsRouter = createTRPCRouter({
         id: z.string(),
         type: z.enum(["bank", "crm"]).optional(),
         balance: z.number().optional(),
+        openingBalance: z.number().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

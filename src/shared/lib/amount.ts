@@ -8,7 +8,7 @@ export const parseAmount = (
       const idx = index[i];
       if (row[idx]) {
         const amount = parseFloat(row[idx].toString().replace(",", ".")) || 0;
-        return amount;
+        return isIncome[i] ? amount : -amount;
       }
     }
     return 0;
@@ -19,7 +19,7 @@ export const parseAmount = (
       typeof value === "number"
         ? value
         : parseFloat(value.replace(",", ".")) || 0;
-    return amount;
+    return isIncome ? amount : -amount;
   }
   return 0;
 };

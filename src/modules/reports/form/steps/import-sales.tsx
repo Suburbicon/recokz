@@ -1,9 +1,13 @@
+import { z } from "zod";
 import { api } from "@/shared/lib/trpc/client";
+import { cn } from "@/shared/lib/cn";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { CheckCircle, XCircle, DollarSign } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Prisma, Transaction } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +17,8 @@ import {
 } from "@/shared/ui/dialog";
 import { toast } from 'sonner';
 import { ReconciliationRow } from "./components/ReconciliationRow";
-import { ReconciliationRowV2 } from './components/ReconciliationRowV2'
+import { ReconciliationRowV2 } from './components/ReconciliationRowV2';
+import { Input } from "@/shared/ui/input";
 
 const reconciliationWithRelations = {
   include: {
@@ -27,24 +32,43 @@ type ReconciliationWithRelations = Prisma.ReconciliationGetPayload<
   typeof reconciliationWithRelations
 >;
 
+type TransactionType = 'Kaspi' | 'Halyk' | 'CRM' | 'Cash';
+
+export const formSchema = z.object({
+  addedBy: z.string({ message: "Обязательное поле" }).min(1, "Обязательное поле"),
+  purpose: z.string({ message: "Обязательное поле" }).min(1, "Обязательное поле")
+});
+
+type SchemaType = z.infer<typeof formSchema>;
+
 export const ImportSales = () => {
   const params = useParams<{ id: string }>();
   const [isModalReconciliationDetailOpen, setIsModalReconciliationDetailOpen] = useState(false);
   const [isModalReconciliationsDetailOpen, setIsModalReconciliationsDetailOpen] = useState(false);
   const [isModalReconciliationCreateOpen, setIsModalReconciliationCreateOpen] = useState(false);
+  const [isModalReconcileCreateOpen, setIsModalReconcileCreateOpen] = useState(false);
   const [currentBankReconciliation, setCurrentBankReconciliation] = useState<ReconciliationWithRelations>();
   const [currentReconciliations, setCurrentReconciliations] = useState<ReconciliationWithRelations[]>([]);
   const [pickedCrmTransactions, setPickedCrmTransactions] = useState<string[]>([]);
-  const [currentBank, setCurrentBank] = useState<'Kaspi' | 'Halyk'>('Kaspi')
+  const [currentTransactionFilter, setCurrentTransactionFilter] = useState<TransactionType>('Kaspi')
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
   });
 
   const { 
+    mutateAsync: updateReconciliation, 
+    isPending: isUpdatingReconciliation 
+  } = api.reconciliation.updateReconcile.useMutation({
+    onSuccess: () => {
+      utils.reports.getById.invalidate({ id: params.id });
+    }
+  })
+
+  const { 
     mutateAsync: updateBankReconciliation, 
     isPending: isUpdatingBankReconciliation 
-  } = api.reconciliation.updateReconcile.useMutation({
+  } = api.reconciliation.updateBankReconcile.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
     }
@@ -54,10 +78,19 @@ export const ImportSales = () => {
     category: "income",
   });
 
+  const { mutateAsync: createTransaction, isPending: isPendingCreateTransaction } = api.transaction.create.useMutation({
+    onSuccess: () => {
+      toast.success('Транзакция успешно создалась');
+    },
+    onError: () => {
+      toast.error('Транзакция не создалась');
+    }
+  })
+
   const utils = api.useUtils();
   const {
-    mutateAsync: updateReconciliation,
-    isPending: isUpdatingReconciliation,
+    mutateAsync: updateDataReconciliation,
+    isPending: isUpdatingDataReconciliation,
   } = api.reconciliation.update.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
@@ -70,6 +103,14 @@ export const ImportSales = () => {
         utils.reports.getById.invalidate({ id: params.id });
       },
     });
+
+  const form = useForm<SchemaType>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      addedBy: '',
+      purpose: ''
+    },
+  });
 
   const formatBalance = (balanceInKopecks: number) => {
     return (balanceInKopecks / 100).toLocaleString("ru-RU", {
@@ -102,8 +143,8 @@ export const ImportSales = () => {
     return a.id.localeCompare(b.id);
   }, [])
 
-  const chooseTypeBank = (bank: 'Kaspi' | 'Halyk') => {
-    setCurrentBank(bank)
+  const chooseTypeBank = (bank: TransactionType ) => {
+    setCurrentTransactionFilter(bank)
   }
 
   const handleNext = async () => {
@@ -117,26 +158,90 @@ export const ImportSales = () => {
     }
   };
 
-  const bankReconciliations = useMemo(() => {
+  const reconciliations = useMemo(() => {
     if (report) {
-      return Object.groupBy(report.reconciliations
-        .filter((reconciliation) => {
-          if (
-            reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
-            typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
-            reconciliation.bankTransaction.meta.bank === currentBank
-          ) {
-            return true;
-          }
+      switch(currentTransactionFilter) {
+        case 'Kaspi':
+          return Object.groupBy(report.reconciliations
+            .filter((reconciliation) => {
+              if (
+                reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
+                typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
+                reconciliation.bankTransaction.meta.bank === currentTransactionFilter &&
+                reconciliation.bankTransaction.meta['КНП'] !== '190'
+              ) {
+                return true;
+              }
 
-          return false;
-        })
-        .sort(filterByDateReconciliations),
-        rec => rec.bankTransactionId!
-      )
+              return false;
+            })
+            .sort(filterByDateReconciliations),
+            rec => rec.bankTransactionId!
+          )
+        case 'Halyk':
+          return Object.groupBy(report.reconciliations
+            .filter((reconciliation) => {
+              if (
+                reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
+                typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
+                reconciliation.bankTransaction.meta.bank === currentTransactionFilter
+              ) {
+                return true;
+              }
+
+              return false;
+            })
+            .sort(filterByDateReconciliations),
+            rec => rec.bankTransactionId!
+          )
+        case 'CRM':
+          return Object.groupBy(report.reconciliations
+            .filter((reconciliation) => {
+              if (reconciliation.crmTransaction) {
+                return true;
+              }
+
+              return false;
+            })
+            .sort(filterByDateReconciliations),
+            rec => rec.crmTransactionId!
+          )
+        case 'Cash':
+          return Object.groupBy(report.reconciliations
+            .filter((reconciliation) => {
+              if (reconciliation.crmTransaction && reconciliation.crmTransaction.meta &&
+                typeof reconciliation.crmTransaction.meta === 'object' && 'byCash' in reconciliation.crmTransaction.meta &&
+                reconciliation.crmTransaction.meta.byCash
+              ) {
+                return true;
+              }
+
+              return false;
+            })
+            .sort(filterByDateReconciliations),
+            rec => rec.crmTransactionId!
+          )
+        default:
+          return []
+      }
     }
     return []
-  }, [currentBank, report, filterByDateReconciliations])
+  }, [currentTransactionFilter, report, filterByDateReconciliations]);
+
+  const isKaspiTransactionsAmountOfDocumentsIsSame = useMemo(() => {
+    const knpAmount = report?.reconciliations.reduce((acc, rec) => {
+      if (
+        rec.bankTransaction && rec.bankTransaction.meta &&
+        typeof rec.bankTransaction.meta === 'object' && 'КНП' in rec.bankTransaction?.meta &&
+        rec.bankTransaction.meta['КНП'] === '190'
+      ) {
+        acc += rec.bankTransaction.amount / 100
+      }
+      return acc
+    }, 0)
+
+    return report?.documents.some(d => d.balance === knpAmount)
+  }, [report])
 
   if (isLoading) {
     return (
@@ -191,8 +296,7 @@ export const ImportSales = () => {
     .filter((reconciliation) => {
       if (
         !reconciliation.bankTransaction &&
-        reconciliation.crmTransaction?.amount &&
-        reconciliation.crmTransaction?.amount > 0
+        reconciliation.crmTransaction?.amount
       ) return true
       return false
     })
@@ -258,6 +362,15 @@ export const ImportSales = () => {
     setIsModalReconciliationCreateOpen(open);
   }
 
+  const handleCreateReconcile = (reconciliation: ReconciliationWithRelations) => {
+    setIsModalReconcileCreateOpen(true);
+    setCurrentBankReconciliation(reconciliation)
+  }
+
+  const handleModalReconcileCreateChange = (open: boolean) => {
+    setIsModalReconcileCreateOpen(open);
+  }
+
   const handlePickCrmTransactions = (transactionId: string) => {
     if (pickedCrmTransactions.includes(transactionId)) {
       setPickedCrmTransactions(prev => prev.filter(tId => tId !== transactionId))
@@ -270,7 +383,7 @@ export const ImportSales = () => {
   const handleCreateNewReconciliation = async () => {
     if (currentBankReconciliation && currentBankReconciliation.bankTransactionId) {
 
-      await updateBankReconciliation({
+      await updateReconciliation({
         reconciliationId: currentBankReconciliation.id,
         crmTransactionsIds: pickedCrmTransactions,
         bankTransactionId: currentBankReconciliation.bankTransactionId
@@ -282,9 +395,9 @@ export const ImportSales = () => {
     }
   }
 
-  const totalIncome = Object.values(bankReconciliations).reduce((sum, reconciliation) => {
-    return sum + getTransactionAmount(reconciliation![0]);
-  }, 0);
+  // const totalIncome = Object.values(bankReconciliations).reduce((sum, reconciliation) => {
+  //   return sum + getTransactionAmount(reconciliation![0]);
+  // }, 0);
 
   const getTransactionTypeName = (typeId: string | null) => {
     if (!typeId || !transactionTypes) return null;
@@ -309,11 +422,40 @@ export const ImportSales = () => {
     return source;
   };
 
+  const handleSubmit = async (values: SchemaType) => {
+    if (currentBankReconciliation && currentBankReconciliation.bankTransactionId) {
+      const crmTransaction = await createTransaction({
+        amount: currentBankReconciliation.bankTransaction!.amount,
+        documentId: incomeCrmReconciliations[0].crmTransaction!.documentId!,
+        meta: {
+          'Purpose': values.purpose,
+          'Added by': values.addedBy
+        },   
+      })
+
+      await updateBankReconciliation({
+        reconciliationId: currentBankReconciliation.id,
+        bankTransactionId: currentBankReconciliation.bankTransactionId,
+        crmTransactionId: crmTransaction.id
+      });
+
+      setIsModalReconcileCreateOpen(false);
+      toast.success('Транзакция успешно сверилась');
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-4">Доходы (Продажи)</h2>
         <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+          {!isKaspiTransactionsAmountOfDocumentsIsSame && (
+            <div className="mb-3 text-red-500">
+              <p>
+                Сумма из Отчета по продажам не равна сумме Продаж из выписки, проверьте пожалуйста документы!
+              </p>
+            </div>
+          )}
           <div className="flex items-center space-x-3">
             <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
             <div>
@@ -321,7 +463,7 @@ export const ImportSales = () => {
                 Общая сумма доходов
               </p>
               <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                {formatBalance(totalIncome)}
+                {/* {formatBalance(totalIncome)} */}Сделать
               </p>
             </div>
           </div>
@@ -332,7 +474,7 @@ export const ImportSales = () => {
         <button 
           type="button"
           className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentBank === 'Kaspi' && 'bg-blue-600'}`
+            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Kaspi' && 'bg-blue-600'}`
           }
           onClick={() => chooseTypeBank('Kaspi')}
         >
@@ -341,31 +483,50 @@ export const ImportSales = () => {
         <button 
           type="button"
           className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentBank === 'Halyk' && 'bg-blue-600'}`
+            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Halyk' && 'bg-blue-600'}`
           }
           onClick={() => chooseTypeBank('Halyk')}
         >
           Halyk
         </button>
+        <button 
+          type="button"
+          className={
+            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'CRM' && 'bg-blue-600'}`
+          }
+          onClick={() => chooseTypeBank('CRM')}
+        >
+          CRM
+        </button>
+        <button 
+          type="button"
+          className={
+            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Cash' && 'bg-blue-600'}`
+          }
+          onClick={() => chooseTypeBank('Cash')}
+        >
+          Наличные
+        </button>
       </div>
 
-      {Object.values(bankReconciliations).length > 0 ? (
+      {Object.values(reconciliations).length > 0 ? (
         <div>
           <h3 className="text-lg font-medium mb-3">
-            Банковские транзакции ({Object.values(bankReconciliations).length})
+            Транзакции ({Object.values(reconciliations).length})
           </h3>
           <div className="w-[100%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {Object.values(bankReconciliations).map((reconciliations) => (
+                {Object.values(reconciliations).map((reconciliations) => (
                   reconciliations && (
                     <ReconciliationRowV2
                       key={reconciliations[0].id}
                       reconciliations={reconciliations}
                       transactionTypes={transactionTypes}
-                      updateReconciliation={updateReconciliation}
+                      updateReconciliation={updateDataReconciliation}
                       isUpdatingReconciliation={isUpdatingReconciliation}
                       handleViewReconciliations={handleViewReconciliations}
+                      handleCreateReconcile={handleCreateReconcile}
                       handleReconciliationCreate={handleReconciliationCreate}
                       notReconciliatedCrmTransactions={notReconciliatedCrmTransactions}
                       pickedCrmTransactions={pickedCrmTransactions}
@@ -386,43 +547,6 @@ export const ImportSales = () => {
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
             Доходные транзакции появятся после загрузки и сверки документов
-          </p>
-        </div>
-      )}
-
-      {incomeCrmReconciliations.length > 0 ? (
-        <div>
-          <h3 className="text-lg font-medium mb-3">
-            CRM транзакции доходов ({incomeCrmReconciliations.length})
-          </h3>
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-            <div className="max-h-96 overflow-y-auto scrollbar-hide">
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {incomeCrmReconciliations.map((reconciliation) => (
-                  <ReconciliationRow
-                    key={reconciliation.id}
-                    reconciliation={reconciliation}
-                    transactionTypes={transactionTypes}
-                    updateReconciliation={updateReconciliation}
-                    isUpdatingReconciliation={isUpdatingReconciliation}
-                    handleViewTransactions={handleViewTransactions}
-                    handleReconciliationCreate={handleReconciliationCreate}
-                    type="crm"
-                    isMini={false}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Нет доходных CRM транзакций
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Доходные CRM транзакции появятся после загрузки и сверки документов
           </p>
         </div>
       )}
@@ -629,7 +753,7 @@ export const ImportSales = () => {
                       key={reconciliation.id}
                       reconciliation={reconciliation}
                       transactionTypes={transactionTypes}
-                      updateReconciliation={updateReconciliation}
+                      updateReconciliation={updateDataReconciliation}
                       isUpdatingReconciliation={isUpdatingReconciliation}
                       handleViewTransactions={handleViewTransactions}
                       handleReconciliationCreate={handleReconciliationCreate}
@@ -652,6 +776,60 @@ export const ImportSales = () => {
                 Сохранить
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isModalReconcileCreateOpen} onOpenChange={handleModalReconcileCreateChange}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Транзакция</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
+            {(currentBankReconciliation?.bankTransaction) && (
+              <div className="pt-3">
+                <p className="text-lg font-bold">Банковская транзакция</p>
+                {formatBalance(currentBankReconciliation.bankTransaction.amount)}
+              </div>
+            )}
+
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <p className="my-2 text-lg font-bold">CRM транзакция</p>
+              <div className="flex flex-col space-y-4 p-4">
+                <label>
+                  <span>Кем добавлена</span>
+                  <Input
+                    type="string"
+                    placeholder=""
+                    {...form.register("addedBy")}
+                    className={cn(
+                      form.formState.errors.addedBy && "border-red-500",
+                    )}
+                  />
+                </label>
+                <label>
+                  <span>Цель</span>
+                  <Input
+                    type="string"
+                    placeholder=""
+                    {...form.register("purpose")}
+                    className={cn(
+                      form.formState.errors.purpose && "border-red-500",
+                    )}
+                  />
+                </label>
+                <div className="flex flex-col w-full space-y-3">              
+                  <Button 
+                    size="sm"
+                    type="submit"
+                  >
+                    Сохранить
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <DialogFooter>
           </DialogFooter>
         </DialogContent>
       </Dialog>

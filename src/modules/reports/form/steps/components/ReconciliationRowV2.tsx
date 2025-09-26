@@ -31,6 +31,7 @@ export const ReconciliationRowV2 = ({
     isUpdatingReconciliation,
     handleViewReconciliations,
     handleReconciliationCreate,
+    handleCreateReconcile,
     pickedCrmTransactions,
     handlePickCrmTransactions,
     type,
@@ -43,6 +44,7 @@ export const ReconciliationRowV2 = ({
     isUpdatingReconciliation: boolean,
     handleViewReconciliations: any,
     handleReconciliationCreate: any,
+    handleCreateReconcile: any,
     pickedCrmTransactions?: any,
     handlePickCrmTransactions?: any,
     type: 'bank' | 'crm',
@@ -52,9 +54,9 @@ export const ReconciliationRowV2 = ({
     const [isExpanded, setIsExpanded] = useState(true);
     const formatBalance = (balanceInKopecks: number) => {
         return (balanceInKopecks / 100).toLocaleString("ru-RU", {
-        style: "currency",
-        currency: "KZT",
-        minimumFractionDigits: 2,
+            style: "currency",
+            currency: "KZT",
+            minimumFractionDigits: 2,
         });
     };
 
@@ -118,8 +120,7 @@ export const ReconciliationRowV2 = ({
         // Prefer bank transaction amount, fallback to CRM transaction amount
         if (typeReconciliation === 'bank') {
             if (
-                reconciliations[0].bankTransaction &&
-                reconciliations[0].bankTransaction.amount > 0
+                reconciliations[0].bankTransaction
             ) {
                 return reconciliations[0].bankTransaction.amount;
             }
@@ -183,25 +184,30 @@ export const ReconciliationRowV2 = ({
             className="flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
         >
             <div className="flex items-center justify-between w-full">
-                <div className="flex items-center justify-between p-2 bg-gray-600 rounded-xl space-x-4 text-base">
-                    <div className="flex flex-col">
-                        <span className="text-sm">
-                            {formatDate(getTransactionDate(reconciliations[0]))}
-                        </span>
-                        <span className="font-bold">
-                            {formatBalance(
-                                getTransactionAmount(reconciliations, 'bank'),
-                            )}
-                        </span>
-                        <span>
-                            
-                        </span>
+                {reconciliations.some(r => r.bankTransactionId) ? (
+                    <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
+                        <div className="flex flex-col">
+                            <span className="text-sm">
+                                {formatDate(getTransactionDate(reconciliations[0]))}
+                            </span>
+                            <span className="font-bold">
+                                {formatBalance(
+                                    getTransactionAmount(reconciliations, 'bank'),
+                                )}
+                            </span>
+                            <span>
+                                
+                            </span>
+                        </div>
+                        <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
+                            Детали
+                        </Button>
                     </div>
-                    <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
-                        Детали
-                    </Button>
-                </div>
-                <div className="flex flex-col items-center justify-center">
+                ) : (
+                    <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
+                    </div>
+                )}
+                <div className="flex flex-col items-center justify-center w-[50%]">
                     <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                             getIconAndBgColor(reconciliations).bg
@@ -220,13 +226,13 @@ export const ReconciliationRowV2 = ({
                         </p>
                     </div>
                 </div>
-                <div>
+                <div className="w-[25%]">
                     {reconciliations.some(r => !r.crmTransactionId) ? (
                         <div className="flex flex justify-between p-2 bg-gray-600 rounded-xl text-base space-x-4">
                             <Button size="sm" onClick={() => handleReconciliationCreate(reconciliations[0])}>
                                 Сверить
                             </Button>
-                            <Button size="sm" onClick={() => {}}>
+                            <Button size="sm" onClick={() => handleCreateReconcile(reconciliations[0])}>
                                 Создать
                             </Button>
                         </div>

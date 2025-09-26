@@ -56,6 +56,7 @@ model Document {
   link     String       @map("link")
   type     DocumentType @map("type")
   bankName String?      @map("bankName")
+  openingBalance Int?   @map("openingBalance")
 
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")

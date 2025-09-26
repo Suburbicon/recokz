@@ -3,7 +3,6 @@ import { protectedProcedure } from "@/shared/lib/trpc/server";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Transaction } from "@prisma/client";
-import { isNull } from "util";
 
 export const reconciliationRouter = createTRPCRouter({
   reconcile: protectedProcedure
@@ -265,7 +264,39 @@ export const reconciliationRouter = createTRPCRouter({
         });
       }
     }),
+  updateBankReconcile: protectedProcedure
+    .input(
+      z.object({
+        reconciliationId: z.string(),
+        bankTransactionId: z.string(),
+        crmTransactionId: z.string()
+      })
+    )
+    .mutation(async ({ctx, input}) => {
+      try {
+        await ctx.prisma.reconciliation.update({
+          where: {
+            id: input.reconciliationId,
+            bankTransactionId: input.bankTransactionId
+          },
+          data: {
+            crmTransactionId: input.crmTransactionId
+          }
+        })
+      } catch (error) {
+        console.error("Error updating reconciliation:", error);
 
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Ошибка при сверки",
+          cause: error,
+        });
+      }
+    }),
   updateReconcile: protectedProcedure
     .input(
       z.object({

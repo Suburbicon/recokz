@@ -1,7 +1,7 @@
 import { api } from "@/shared/lib/trpc/client";
 import { useParams } from "next/navigation";
 import { useDropzone } from "react-dropzone";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Eye, Info, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import {
   Dialog,
@@ -32,6 +32,7 @@ export const ImportDocsStepForm = () => {
   const [documentCashBalances, setDocumentCashBalances] = useState<
     Record<string, number>
   >({});
+  const [documentType, setDocumentType] = useState('');
 
   const { data: documents, isLoading: isLoadingDocuments } =
     api.documents.getAll.useQuery({
@@ -98,8 +99,10 @@ export const ImportDocsStepForm = () => {
           fileName: file.name,
           mimeType: file.type,
           fileSize: file.size,
+          bankName: documentType,
         });
       }
+      setDocumentType('')
     } catch (error) {
       console.error(error);
     }
@@ -208,10 +211,10 @@ export const ImportDocsStepForm = () => {
     const cashBalance = documentCashBalances[documentId] || 0;
     try {
       // update cash balance, it is balance field in db, it is kopecks
-      const balanceInKopecks = Math.round(cashBalance * 100);
+      const balanceInKopecks = Math.round(cashBalance);
       await updateDocument({
         id: documentId,
-        balance: balanceInKopecks,
+        openingBalance: balanceInKopecks,
       });
     } catch (error) {
       console.error("Failed to update cash balance:", error);
@@ -226,41 +229,67 @@ export const ImportDocsStepForm = () => {
     }
   };
 
+  useEffect(() => {
+    documents?.forEach(d => handleCashBalanceChange(d.id, d.openingBalance?.toString() || ''))
+  }, [documents])
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-2">Загрузите документы</h2>
         <p className="mb-6">Выгрузка с банков и CRM-систем</p>
 
-        <div
-          {...getRootProps()}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${
-              isDragActive
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
-                : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+        <div className="text-sm flex items-center gap-2 mb-4">
+          Выберите тип документа:
+          <Select
+            value={documentType}
+            onValueChange={(value) =>
+              setDocumentType(value)
             }
-          `}
-        >
-          <input {...getInputProps()} />
-          <div className="space-y-2">
-            <div className="text-gray-600 dark:text-gray-300">
-              {isDragActive ? (
-                <p>Отпустите файлы здесь...</p>
-              ) : (
-                <div>
-                  <p className="text-lg">
-                    Перетащите файлы сюда или нажмите для выбора
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Поддерживаемые форматы: Excel
-                  </p>
-                </div>
-              )}
+            disabled={isUpdating}
+          >
+            <SelectTrigger className="w-26 h-6 text-xs ml-1 inline-flex">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Kaspi">Kaspi</SelectItem>
+              <SelectItem value="Halyk">Halyk</SelectItem>
+              <SelectItem value="CRM">CRM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {documentType && (
+          <div
+            {...getRootProps()}
+            className={`
+              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+              ${
+                isDragActive
+                  ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
+                  : "border-gray-300 hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
+              }
+            `}
+          >
+            <input {...getInputProps()} />
+            <div className="space-y-2">
+              <div className="text-gray-600 dark:text-gray-300">
+                {isDragActive ? (
+                  <p>Отпустите файлы здесь...</p>
+                ) : (
+                  <div>
+                    <p className="text-lg">
+                      Перетащите файлы сюда или нажмите для выбора
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Поддерживаемые форматы: Excel
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {uploadedFiles.length > 0 && (
@@ -385,12 +414,12 @@ export const ImportDocsStepForm = () => {
                   <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-700">
                     <div className="flex items-center space-x-4">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Начальный остаток наличных:
+                        Баланс на начало периода:
                       </label>
                       <div className="flex-1 max-w-xs">
                         <Input
                           type="number"
-                          step="0.01"
+                          step="1"
                           min="0"
                           placeholder="0.00"
                           value={documentCashBalances[document.id] || ""}
