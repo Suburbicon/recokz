@@ -185,7 +185,7 @@ export const ReconciliationRowV2 = ({
         >
             <div className="flex items-center justify-between w-full">
                 {reconciliations.some(r => r.bankTransactionId) ? (
-                    <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
+                    <div className="flex items-center justify-between p-2 bg-gray-600 rounded-xl space-x-4 text-base">
                         <div className="flex flex-col">
                             <span className="text-sm">
                                 {formatDate(getTransactionDate(reconciliations[0]))}
@@ -207,7 +207,7 @@ export const ReconciliationRowV2 = ({
                     <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
                     </div>
                 )}
-                <div className="flex flex-col items-center justify-center w-[50%]">
+                <div className="flex flex-col items-center justify-center">
                     <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                             getIconAndBgColor(reconciliations).bg
@@ -226,7 +226,7 @@ export const ReconciliationRowV2 = ({
                         </p>
                     </div>
                 </div>
-                <div className="w-[25%]">
+                <div>
                     {reconciliations.some(r => !r.crmTransactionId) ? (
                         <div className="flex flex justify-between p-2 bg-gray-600 rounded-xl text-base space-x-4">
                             <Button size="sm" onClick={() => handleReconciliationCreate(reconciliations[0])}>
@@ -237,27 +237,51 @@ export const ReconciliationRowV2 = ({
                             </Button>
                         </div>
                     ) : (
-                        <div className="flex flex-col justify-between p-2 bg-gray-600 rounded-xl text-base">
-                            <div className="flex items-center justify-between space-x-4">
-                                <div className="flex flex-col">
-                                    <span className="text-sm">
-                                        {formatDate(getTransactionDate(reconciliations[0]))}
-                                    </span>
-                                    <span className="font-bold">
-                                        {formatBalance(
-                                            getTransactionAmount(reconciliations, 'crm'),
-                                        )}
-                                    </span>
+                        <div className="flex flex-col space-y-2 p-2 bg-gray-600 rounded-xl text-base">
+                            {!isResolved(reconciliations) && (
+                                <div className="flex-shrink-0">
+                                    <Select
+                                        value={reconciliations[0].typeId || ""}
+                                        onValueChange={(value) =>
+                                            handleTypeChange(reconciliations[0].id, value)
+                                        }
+                                        disabled={isUpdatingReconciliation}
+                                    >
+                                        <SelectTrigger className="w-32 h-7 text-xs">
+                                            <SelectValue placeholder="Тип" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {transactionTypes?.map((type: any) => (
+                                            <SelectItem key={type.id} value={type.id}>
+                                                {type.name}
+                                            </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
-                                    Детали
-                                </Button>
+                            )}
+                            <div className="flex flex-col">
+                                <div className="flex items-center justify-between space-x-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm">
+                                            {formatDate(getTransactionDate(reconciliations[0]))}
+                                        </span>
+                                        <span className="font-bold">
+                                            {formatBalance(
+                                                getTransactionAmount(reconciliations, 'crm'),
+                                            )}
+                                        </span>
+                                    </div>
+                                    <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
+                                        Детали
+                                    </Button>
+                                </div>
+                                {reconciliations.length > 1 && 
+                                    <span className="mt-2">
+                                        {`Состоит из ${reconciliations.length} транзакций CRM`}
+                                    </span>
+                                }
                             </div>
-                            {reconciliations.length > 1 && 
-                                <span className="mt-2">
-                                    {`Состоит из ${reconciliations.length} транзакций CRM`}
-                                </span>
-                            }
                         </div>
                     )}
                 </div>

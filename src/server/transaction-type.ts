@@ -15,7 +15,6 @@ export const transactionTypeRouter = createTRPCRouter({
           organization: true,
         },
         where: {
-          category: input.category,
           OR: [
             {
               organizationId: null,

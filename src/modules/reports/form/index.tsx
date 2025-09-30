@@ -90,7 +90,7 @@ export function ReportsForm() {
             value={ReportStatus.sales}
             disabled={timelineStep < 3}
           >
-            <AccordionTrigger>Продажи</AccordionTrigger>
+            <AccordionTrigger>Сверка</AccordionTrigger>
             <AccordionContent>
               <ImportSales />
             </AccordionContent>

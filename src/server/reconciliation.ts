@@ -78,12 +78,14 @@ export const reconciliationRouter = createTRPCRouter({
           const matchingCrmTransaction = documentCrmTransactions.find(
             (crmTx: any) =>
               crmTx.amount === documentBankTransaction.amount &&
+              crmTx.meta.bank === documentBankTransaction.meta.bank &&
               Math.abs(
                 new Date(crmTx.date).getTime() -
                   new Date(documentBankTransaction.date).getTime(),
               ) <
                 24 * 60 * 60 * 1000 // Within 24 hours
           );
+
           if (matchingCrmTransaction) {
             reconciliations.push({
               reportId: input.reportId,

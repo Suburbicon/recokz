@@ -154,6 +154,17 @@ export const documentsRouter = createTRPCRouter({
           if (input.bankName !== 'CRM') {
             acc[acc.length - 1].meta.bank = input.bankName
           }
+
+          if (input.bankName === 'CRM') {
+            switch(acc[acc.length - 1].meta['Payment source']) {
+              case 'Халык банк':
+                acc[acc.length - 1].meta.bank = 'Halyk'
+                break;
+              case 'Каспи':
+                acc[acc.length - 1].meta.bank = 'Kaspi'
+                break;
+            }
+          }
           return acc;
         }, []);
 

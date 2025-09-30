@@ -20,6 +20,8 @@ import {
 import { Input } from "@/shared/ui/input";
 import { formatDate } from "@/shared/lib/dayjs";
 
+type Bank = 'CRM' | 'Halyk' | 'Kaspi'
+
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
   const utils = api.useUtils();
@@ -32,7 +34,7 @@ export const ImportDocsStepForm = () => {
   const [documentCashBalances, setDocumentCashBalances] = useState<
     Record<string, number>
   >({});
-  const [documentType, setDocumentType] = useState('');
+  const [documentType, setDocumentType] = useState<Bank>();
 
   const { data: documents, isLoading: isLoadingDocuments } =
     api.documents.getAll.useQuery({
@@ -99,10 +101,10 @@ export const ImportDocsStepForm = () => {
           fileName: file.name,
           mimeType: file.type,
           fileSize: file.size,
-          bankName: documentType,
+          bankName: documentType || '',
         });
       }
-      setDocumentType('')
+      setDocumentType(undefined)
     } catch (error) {
       console.error(error);
     }
@@ -243,7 +245,7 @@ export const ImportDocsStepForm = () => {
           Выберите тип документа:
           <Select
             value={documentType}
-            onValueChange={(value) =>
+            onValueChange={(value: Bank) =>
               setDocumentType(value)
             }
             disabled={isUpdating}

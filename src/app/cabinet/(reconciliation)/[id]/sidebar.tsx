@@ -63,7 +63,7 @@ export function ReconciliationSidebar() {
                 </TimelineItem>
                 <TimelineItem
                   bullet={<CheckSquare className="h-3 w-3" />}
-                  title="Продажи"
+                  title="Сверка"
                 >
                   <Typography size="body-14" color="gray-300">
                     Сверьте продажи с транзакциями и подтвердите

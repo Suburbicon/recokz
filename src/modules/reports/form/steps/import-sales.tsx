@@ -265,20 +265,24 @@ export const ImportSales = () => {
     );
   }
 
-  const incomeBankReconciliations = Object.groupBy(report.reconciliations
+  const bankReconciliations = Object.groupBy(report.reconciliations
     .filter((reconciliation) => {
       if (
-        reconciliation.bankTransaction &&
-        reconciliation.bankTransaction.amount > 0
+        reconciliation.bankTransaction
       ) {
         return true;
       }
 
       return false;
-    })
-    .sort(filterByDateReconciliations),
+    }),
     rec => rec.bankTransactionId!
   );
+
+  const crmReconciliations = report.reconciliations
+    .filter((reconciliation) => {
+      if (reconciliation.crmTransaction) return true
+      return false
+    });
 
   const incomeCrmReconciliations = report.reconciliations
     .filter((reconciliation) => {
@@ -321,23 +325,6 @@ export const ImportSales = () => {
       return false;
     })
     .sort(filterByDateReconciliations);
-
-  const getTransactionAmount = (reconciliation: any) => {
-    // Prefer bank transaction amount, fallback to CRM transaction amount
-      if (
-        reconciliation.bankTransaction &&
-        reconciliation.bankTransaction.amount > 0
-      ) {
-        return reconciliation.bankTransaction.amount;
-      }
-      if (
-        reconciliation.crmTransaction &&
-        reconciliation.crmTransaction.amount > 0
-      ) {
-        return reconciliation.crmTransaction.amount;
-      }
-      return 0;
-  };
 
   const handleViewReconciliations = (reconciliations: ReconciliationWithRelations[]) => {
     setIsModalReconciliationsDetailOpen(true);
@@ -399,6 +386,14 @@ export const ImportSales = () => {
   //   return sum + getTransactionAmount(reconciliation![0]);
   // }, 0);
 
+  const bankTurnover = Object.values(bankReconciliations).reduce((sum, rec) => {
+    return sum + (rec![0].bankTransaction?.amount || 0)
+  }, 0);
+
+  const crmTurnover = crmReconciliations.reduce((sum, rec) => {
+    return sum + (rec.crmTransaction?.amount || 0)
+  }, 0);
+
   const getTransactionTypeName = (typeId: string | null) => {
     if (!typeId || !transactionTypes) return null;
     const type = transactionTypes.find((t) => t.id === typeId);
@@ -447,7 +442,7 @@ export const ImportSales = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Доходы (Продажи)</h2>
+        <h2 className="text-xl font-semibold mb-4">Сверка</h2>
         <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
           {!isKaspiTransactionsAmountOfDocumentsIsSame && (
             <div className="mb-3 text-red-500">
@@ -456,15 +451,39 @@ export const ImportSales = () => {
               </p>
             </div>
           )}
-          <div className="flex items-center space-x-3">
-            <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
-            <div>
-              <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-                Общая сумма доходов
-              </p>
-              <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                {/* {formatBalance(totalIncome)} */}Сделать
-              </p>
+          <div className="flex space-x-3">
+            <div className="flex items-center space-x-1">
+              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  Оборот банка
+                </p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  {formatBalance(bankTurnover)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  Оборот CRM
+                </p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  {formatBalance(crmTurnover)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-1">
+              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div>
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  Не сверено
+                </p>
+                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                  Сделать
+                </p>
+              </div>
             </div>
           </div>
         </div>
