@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           date: parsedResultDate,
           meta: result.pos_response.data,
           organizationId: organization_id as string,
-          transactionId: crypto.randomUUID()
+          transactionId: result.pos_response.data.tagRRN
         }
       })
     }
