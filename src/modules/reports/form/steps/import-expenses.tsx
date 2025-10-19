@@ -16,9 +16,7 @@ export const ImportExpenses = () => {
     id: params.id,
   });
 
-  const { data: transactionTypes } = api.transactionType.getAll.useQuery({
-    category: "expense",
-  });
+  const { data: transactionTypes } = api.transactionType.getAll.useQuery();
 
   const utils = api.useUtils();
   const {
@@ -233,7 +231,7 @@ export const ImportExpenses = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Расходы</h2>
+        <h2 className="text-xl font-semibold mb-4">Расходы (ЭТО УДАЛИМ)</h2>
         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
           <div className="flex items-center space-x-3">
             <CreditCard className="w-8 h-8 text-red-600 dark:text-red-400" />

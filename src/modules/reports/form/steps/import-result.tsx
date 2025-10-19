@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from 'react';
 import { useParams } from "next/navigation";
 import { api } from "@/shared/lib/trpc/client";
 import {
@@ -11,6 +12,9 @@ import {
   TableCell,
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { type Bank } from '@/shared/models';
+
+const notAllowedTransactionTypeName = ['Пополнение наличными', 'Дивиденды'];
 
 export function ResultTable() {
   const params = useParams<{ id: string }>();
@@ -19,13 +23,129 @@ export function ResultTable() {
     id: params.id,
   });
 
+  const bankDocuments =
+    Object.groupBy(
+      report?.documents?.filter((document) => document.type === "bank") || [],
+      v => v.bankName!
+    );
+
   const formatBalance = (balanceInKopecks: number) => {
-    return (balanceInKopecks / 100).toLocaleString("ru-RU", {
+    return (balanceInKopecks).toLocaleString("ru-RU", {
       style: "currency",
       currency: "KZT",
       minimumFractionDigits: 2,
     });
   };
+
+  const expensesByType: Record<string, Record<Bank, number>> = useMemo(() => {
+    const calculatedExpense: Record<string, Record<Bank, number>> = {};
+
+    report?.reconciliations?.forEach((reconciliation) => {
+      if (!notAllowedTransactionTypeName.includes(reconciliation.type?.name || '')) {
+        const typeName = reconciliation.type?.name || "Без категории";
+
+        if (reconciliation.bankTransaction && reconciliation.crmTransaction) {
+          const amount =
+            (reconciliation.bankTransaction.amount &&
+              reconciliation.crmTransaction.amount) ||
+            0; 
+          const bankName = reconciliation.bankTransaction.document?.bankName as Exclude<Bank, 'CRM'>;
+
+          if (amount < 0) {
+            if (!calculatedExpense[typeName]) {
+              calculatedExpense[typeName] = {} as Record<Bank, number>
+            }
+            calculatedExpense[typeName][bankName] =
+              (calculatedExpense[typeName][bankName] || 0) + (amount / 100);
+          }
+        } else if (reconciliation.crmTransaction?.meta && typeof reconciliation.crmTransaction.meta === 'object' && 'byCash' in reconciliation.crmTransaction.meta && reconciliation.crmTransaction.meta.byCash) {
+          if (reconciliation.crmTransaction.amount < 0) {
+            if (!calculatedExpense[typeName]) {
+              calculatedExpense[typeName] = {} as Record<Bank, number>
+            }
+            calculatedExpense[typeName]['CRM'] =
+              (calculatedExpense[typeName]['CRM'] || 0) + (reconciliation.crmTransaction.amount / 100);
+          }
+        }
+      }
+    });
+    return calculatedExpense;
+  }, [report?.reconciliations]);
+
+  const incomeByType: Record<string, Record<Bank, number>> = useMemo(() => {
+    const calculatedIncome: Record<string, Record<Bank, number>> = {};
+    report?.reconciliations?.forEach((reconciliation) => {
+      if (!notAllowedTransactionTypeName.includes(reconciliation.type?.name || '')) {
+        const typeName = reconciliation.type?.name || "Без категории";
+
+        if (reconciliation.bankTransaction && reconciliation.crmTransaction) {
+          const amount =
+            (reconciliation.bankTransaction.amount &&
+              reconciliation.crmTransaction.amount) ||
+            0; 
+          const bankName = reconciliation.bankTransaction.document?.bankName as Exclude<Bank, 'CRM'>;
+
+          if (amount > 0) {
+            if (!calculatedIncome[typeName]) {
+              calculatedIncome[typeName] = {} as Record<Bank, number>
+            }
+            calculatedIncome[typeName][bankName] = (calculatedIncome[typeName][bankName] || 0) + (amount / 100);
+          }
+        } else if (reconciliation.crmTransaction?.meta && typeof reconciliation.crmTransaction.meta === 'object' && 'byCash' in reconciliation.crmTransaction.meta && reconciliation.crmTransaction.meta.byCash) {
+          if (reconciliation.crmTransaction.amount > 0) {
+            if (!calculatedIncome[typeName]) {
+              calculatedIncome[typeName] = {} as Record<Bank, number>
+            }
+            calculatedIncome[typeName]['CRM'] = 
+              (calculatedIncome[typeName]['CRM'] || 0) + (reconciliation.crmTransaction.amount / 100);
+          }
+        }
+      }
+    });
+    return calculatedIncome;
+  }, [report?.reconciliations]);
+
+  const amountOfIncomeByType = useMemo(() => {
+    return Object.values(incomeByType).reduce((acc, val) => acc += Object.values(val).reduce((a,v) => a += v, 0), 0)
+  }, [incomeByType]);
+
+  const amountOfExpenseByType = useMemo(() => {
+    return Object.values(expensesByType).reduce((acc, val) => acc += Object.values(val).reduce((a,v) => a += v, 0), 0)
+  }, [expensesByType]);
+
+  const cashIncome = useMemo(() => {
+    return report?.reconciliations.reduce((acc, rec) => {
+      if (rec.bankTransaction) {
+        const bankName = rec.bankTransaction.document?.bankName as Exclude<Bank, 'CRM'>
+        if (rec.type?.name === 'Пополнение наличными') {
+          acc[bankName] = (acc[bankName] || 0) + (rec.bankTransaction.amount || 0)
+        }
+      }
+      return acc
+    }, {} as Record<Bank, number>)
+  }, [report?.reconciliations])
+
+  const dividends = useMemo(() => {
+    return report?.reconciliations.reduce((acc, rec) => {
+      if (rec.bankTransaction) {
+        const bankName = rec.bankTransaction?.document?.bankName as Exclude<Bank, 'CRM'>
+        if (rec.type?.name === 'Дивиденды') {
+          acc[bankName] = (acc[bankName] || 0) + (rec.bankTransaction?.amount || 0)
+        }
+      }
+      return acc
+    }, {} as Record<Bank, number>)
+  }, [report?.reconciliations])
+
+  const totalCashFlow = useMemo(() => {
+    return (amountOfIncomeByType + amountOfExpenseByType) + 
+    (Object.values(cashIncome || {}).reduce((acc, v) => acc += v, 0) / 100) + 
+    (Object.values(dividends || {}).reduce((acc, v) => acc += v, 0) / 100)
+  }, [amountOfIncomeByType, amountOfExpenseByType, cashIncome, dividends]);
+
+  const totalBeginnigFlow = useMemo(() => {
+    return Object.values(bankDocuments).flatMap(v => v).reduce((acc, val) => acc += (val?.openingBalance || 0), 0)
+  }, [bankDocuments])
 
   if (isLoading) {
     return (
@@ -48,57 +168,19 @@ export function ResultTable() {
     );
   }
 
-  const bankDocuments =
-    report.documents?.filter((document) => document.type === "bank") || [];
-
   const crmDocuments =
     report.documents?.filter((document) => document.type === "crm") || [];
 
-  const totalStartBalance = bankDocuments.reduce(
-    (sum, doc) => sum + doc.balance,
-    0,
-  );
+  // const totalStartBalance = bankDocuments.reduce(
+  //   (sum, doc) => sum + doc.balance,
+  //   0,
+  // );
 
   // Cash balance from report (converted from kopecks to display format)
   const reportCashBalance = report.cashBalance || 0;
 
   // Total starting balance including cash
-  const totalStartBalanceWithCash = totalStartBalance + reportCashBalance;
-
-  // Calculate income and expenses from reconciliations
-  const totalIncome =
-    report.reconciliations
-      ?.filter((reconciliation) => {
-        const amount =
-          (reconciliation.bankTransaction?.amount &&
-            reconciliation.crmTransaction?.amount) ||
-          0;
-        return amount > 0;
-      })
-      .reduce((sum, reconciliation) => {
-        const amount =
-          (reconciliation.bankTransaction?.amount &&
-            reconciliation.crmTransaction?.amount) ||
-          0;
-        return sum + amount;
-      }, 0) || 0;
-
-  const totalExpenses =
-    report.reconciliations
-      ?.filter((reconciliation) => {
-        const amount =
-          (reconciliation.bankTransaction?.amount &&
-            reconciliation.crmTransaction?.amount) ||
-          0;
-        return amount < 0;
-      })
-      .reduce((sum, reconciliation) => {
-        const amount =
-          (reconciliation.bankTransaction?.amount &&
-            reconciliation.crmTransaction?.amount) ||
-          0;
-        return sum + Math.abs(amount);
-      }, 0) || 0;
+  // const totalStartBalanceWithCash = totalStartBalance + reportCashBalance;
 
   const totalNotMatchedBankDocuments =
     report.reconciliations
@@ -120,29 +202,6 @@ export function ResultTable() {
         return sum + amount;
       }, 0) || 0;
 
-  // Calculate end balances
-  const totalEndBalance = totalIncome - totalExpenses;
-  const reportEndCashBalance = reportCashBalance; // Assuming cash doesn't change through bank transactions
-
-  // Group reconciliations by transaction type for detailed breakdown
-  const incomeByType: Record<string, number> = {};
-  const expensesByType: Record<string, number> = {};
-
-  report.reconciliations?.forEach((reconciliation) => {
-    const amount =
-      (reconciliation.bankTransaction?.amount &&
-        reconciliation.crmTransaction?.amount) ||
-      0;
-    const typeName = reconciliation.type?.name || "Без категории";
-
-    if (amount > 0) {
-      incomeByType[typeName] = (incomeByType[typeName] || 0) + amount;
-    } else if (amount < 0) {
-      expensesByType[typeName] =
-        (expensesByType[typeName] || 0) + Math.abs(amount);
-    }
-  });
-
   return (
     <div className="space-y-6 p-6">
       {/* Detailed Table */}
@@ -150,262 +209,115 @@ export function ResultTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-64">Показатель</TableHead>
-              {bankDocuments.map((document) => (
-                <TableHead key={document.id} className="text-right">
-                  {document.name}
+              <TableHead className="w-64">Наименование</TableHead>
+              <TableHead className="text-right">Итого</TableHead>
+              {Object.keys(bankDocuments).map((documentName, id) => (
+                <TableHead key={id} className="text-right">
+                  {documentName}
                 </TableHead>
               ))}
-              <TableHead className="text-right">Итого</TableHead>
+              <TableHead className="text-right">Наличные</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Income section */}
+            {/* НАЧАЛО ПЕРИОДА */}
             <TableRow className="bg-green-50 dark:bg-green-950/10">
-              <TableCell className="font-bold">Продажи за период</TableCell>
-              {bankDocuments.map((document) => {
-                const documentIncome =
-                  report.reconciliations
-                    ?.filter((r) => {
-                      const amount =
-                        (r.bankTransaction?.amount &&
-                          r.crmTransaction?.amount) ||
-                        0;
-                      const isFromThisDoc =
-                        r.bankTransaction?.document?.id === document.id ||
-                        r.crmTransaction?.document?.id === document.id;
-                      return amount > 0 && isFromThisDoc;
-                    })
-                    .reduce((sum, r) => {
-                      const amount =
-                        (r.bankTransaction?.amount &&
-                          r.crmTransaction?.amount) ||
-                        0;
-                      return sum + amount;
-                    }, 0) || 0;
-
-                return (
-                  <TableCell key={document.id} className="text-right font-bold">
-                    {formatBalance(documentIncome)}
-                  </TableCell>
-                );
-              })}
+              <TableCell className="font-bold">На начало периода</TableCell>
               <TableCell className="text-right font-bold">
-                {formatBalance(totalIncome)}
+                {formatBalance(totalBeginnigFlow)}
               </TableCell>
+              {Object.entries(bankDocuments).map(([bankName, documents], id) => (
+                <TableCell key={`${bankName}-${id}`} className="text-right font-bold">
+                  {formatBalance((documents?.reduce((acc, val) => acc += val.openingBalance || 0, 0) || 0))}
+                </TableCell>
+              ))}
             </TableRow>
 
-            {/* Detailed income breakdown */}
-            {Object.entries(incomeByType).map(([typeName, amount]) => (
-              <TableRow key={typeName}>
-                <TableCell className="pl-8">• {typeName}</TableCell>
-                {bankDocuments.map((document) => {
-                  const documentTypeIncome =
-                    report.reconciliations
-                      ?.filter((r) => {
-                        const reconciliationAmount =
-                          (r.bankTransaction?.amount &&
-                            r.crmTransaction?.amount) ||
-                          0;
-                        const isFromThisDoc =
-                          r.bankTransaction?.document?.id === document.id ||
-                          r.crmTransaction?.document?.id === document.id;
-                        const matchesType =
-                          r.type?.name === typeName ||
-                          (!r.type && typeName === "Без категории");
-                        return (
-                          reconciliationAmount > 0 &&
-                          isFromThisDoc &&
-                          matchesType
-                        );
-                      })
-                      .reduce((sum, r) => {
-                        const reconciliationAmount =
-                          (r.bankTransaction?.amount &&
-                            r.crmTransaction?.amount) ||
-                          0;
-                        return sum + reconciliationAmount;
-                      }, 0) || 0;
-
-                  return (
-                    <TableCell key={document.id} className="text-right">
-                      {formatBalance(documentTypeIncome)}
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="text-right">
-                  {formatBalance(amount)}
-                </TableCell>
+            {/* ПОСТУПЛЕНИЯ */}
+            {Object.entries(incomeByType).map(([typeName, val], id) => (
+              <TableRow className="bg-green-50 dark:bg-green-950/10" key={typeName+id}>
+                <TableCell>__{typeName}__</TableCell>
+                <TableCell className="text-right">{Object.values(val).reduce((acc, v) => acc += Math.abs(v), 0)}</TableCell>
+                {Object.keys(bankDocuments).map((bankName, id) => (
+                  <TableCell key={`${bankName}-income-${id}`} className="text-right">{val[bankName as Bank]}</TableCell>
+                ))}
+                <TableCell className="text-right">{val['CRM'] || '--'}</TableCell>
               </TableRow>
             ))}
-
-            {/* Expenses section */}
-            <TableRow className="bg-red-50 dark:bg-red-950/10">
-              <TableCell className="font-bold">Расходы за период</TableCell>
-              {bankDocuments.map((document) => {
-                const documentExpenses =
-                  report.reconciliations
-                    ?.filter((r) => {
-                      const amount =
-                        (r.bankTransaction?.amount &&
-                          r.crmTransaction?.amount) ||
-                        0;
-                      const isFromThisDoc =
-                        r.bankTransaction?.document?.id === document.id ||
-                        r.crmTransaction?.document?.id === document.id;
-                      return amount < 0 && isFromThisDoc;
-                    })
-                    .reduce((sum, r) => {
-                      const amount =
-                        (r.bankTransaction?.amount &&
-                          r.crmTransaction?.amount) ||
-                        0;
-                      return sum + Math.abs(amount);
-                    }, 0) || 0;
-
-                return (
-                  <TableCell key={document.id} className="text-right font-bold">
-                    {formatBalance(documentExpenses)}
-                  </TableCell>
-                );
-              })}
-              <TableCell className="text-right font-bold">
-                {formatBalance(totalExpenses)}
-              </TableCell>
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">Итого поступлений</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(amountOfIncomeByType)}</TableCell>
+              <TableCell className="font-bold"></TableCell>
             </TableRow>
 
-            {/* Detailed expenses breakdown */}
-            {Object.entries(expensesByType).map(([typeName, amount]) => (
-              <TableRow key={typeName}>
-                <TableCell className="pl-8">• {typeName}</TableCell>
-                {bankDocuments.map((document) => {
-                  const documentTypeExpense =
-                    report.reconciliations
-                      ?.filter((r) => {
-                        const reconciliationAmount =
-                          (r.bankTransaction?.amount &&
-                            r.crmTransaction?.amount) ||
-                          0;
-                        const isFromThisDoc =
-                          r.bankTransaction?.document?.id === document.id ||
-                          r.crmTransaction?.document?.id === document.id;
-                        const matchesType =
-                          r.type?.name === typeName ||
-                          (!r.type && typeName === "Без категории");
-                        return (
-                          reconciliationAmount < 0 &&
-                          isFromThisDoc &&
-                          matchesType
-                        );
-                      })
-                      .reduce((sum, r) => {
-                        const reconciliationAmount =
-                          (r.bankTransaction?.amount &&
-                            r.crmTransaction?.amount) ||
-                          0;
-                        return sum + Math.abs(reconciliationAmount);
-                      }, 0) || 0;
-
-                  return (
-                    <TableCell key={document.id} className="text-right">
-                      {formatBalance(documentTypeExpense)}
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="text-right">
-                  {formatBalance(amount)}
-                </TableCell>
+            {/* ВЫБЫТИЯ */}
+            {Object.entries(expensesByType).map(([typeName, val], id) => (
+              <TableRow className="bg-green-50 dark:bg-green-950/10" key={typeName+id}>
+                <TableCell>__{typeName}__</TableCell>
+                <TableCell className="text-right">{Object.values(val).reduce((acc, v) => acc += v, 0)}</TableCell>
+                {Object.keys(bankDocuments).map((bankName, id) => (
+                  <TableCell key={`${bankName}-income-${id}`} className="text-right">{val[bankName as Bank] || '--'}</TableCell>
+                ))}
+                <TableCell className="text-right">{val['CRM'] || '--'}</TableCell>
               </TableRow>
             ))}
-
-            {/* Ending balance */}
-            <TableRow className="bg-gray-50 dark:bg-gray-900/50 border-t-2">
-              <TableCell className="font-bold">На конец</TableCell>
-              {bankDocuments.map((document) => {
-                const documentEndBalance =
-                  report.reconciliations
-                    ?.filter((r) => {
-                      const isFromThisDoc =
-                        r.bankTransaction?.document?.id === document.id ||
-                        r.crmTransaction?.document?.id === document.id;
-                      return isFromThisDoc;
-                    })
-                    .reduce((sum, r) => {
-                      const amount =
-                        (r.bankTransaction?.amount &&
-                          r.crmTransaction?.amount) ||
-                        0;
-                      return sum + amount;
-                    }, 0) || 0;
-
-                return (
-                  <TableCell key={document.id} className="text-right font-bold">
-                    {formatBalance(documentEndBalance)}
-                  </TableCell>
-                );
-              })}
-              <TableCell className="text-right font-bold">
-                {formatBalance(totalEndBalance)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-
-      <div>Не сверено:</div>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-64">Показатель</TableHead>
-              {bankDocuments.map((document) => (
-                <TableHead key={document.id} className="text-right">
-                  {document.name}
-                </TableHead>
-              ))}
-              {crmDocuments.map((document) => (
-                <TableHead key={document.id} className="text-right">
-                  {document.name}
-                </TableHead>
-              ))}
-              <TableHead className="text-right">Итого</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Starting balance */}
-            {/* <TableRow>
-              <TableCell className="font-medium">На начало</TableCell>
-              {bankDocuments.map((document) => (
-                <TableCell key={document.id} className="text-right">
-                  {formatBalance(document.balance)}
-                </TableCell>
-              ))}
-              <TableCell className="text-right">
-                {formatBalance(reportCashBalance)}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatBalance(totalStartBalanceWithCash)}
-              </TableCell>
-            </TableRow> */}
-
-            {/* Income section */}
             <TableRow className="bg-green-50 dark:bg-green-950/10">
-              <TableCell className="font-bold">Не сошлось</TableCell>
-              {
-                <TableCell className="text-right font-bold">
-                  {formatBalance(totalNotMatchedBankDocuments)}
-                </TableCell>
-              }
-              {
-                <TableCell className="text-right font-bold">
-                  {formatBalance(totalNotMatchedCrmDocuments)}
-                </TableCell>
-              }
-              <TableCell className="text-right font-bold">
-                {formatBalance(
-                  totalNotMatchedBankDocuments + totalNotMatchedCrmDocuments,
-                )}
-              </TableCell>
+              <TableCell className="font-bold">Итого выбытий</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(amountOfExpenseByType)}</TableCell>
+              <TableCell className="font-bold"></TableCell>
+            </TableRow>
+
+            {/* ИТОГО ПОСТУПЛЕНИЯ И УБЫТИЯ */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">Итого кассовая прибыль/убыток</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(amountOfIncomeByType + amountOfExpenseByType)}</TableCell>
+              <TableCell className="font-bold"></TableCell>
+            </TableRow>
+
+            {/* ПОПОЛНЕНИЯ НАЛИЧНЫМИ */}
+            {cashIncome && (
+              <TableRow className="bg-green-50 dark:bg-green-950/10">
+                <TableCell>Пополнения наличными</TableCell>
+                <TableCell className="text-right">{formatBalance(
+                  Object.values(cashIncome).reduce((acc, v) => acc += v, 0) / 100
+                )}</TableCell>
+                {Object.entries(cashIncome).map(([bankName, amount], id) => (
+                  <TableCell key={`${bankName}-cash-income-${id}`} className="text-right">
+                    {formatBalance(amount / 100)}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right font-bold">--</TableCell>
+              </TableRow>)
+            }
+
+            {/* ДИВИДЕНДЫ */}
+            {dividends && (
+              <TableRow className="bg-green-50 dark:bg-green-950/10">
+                <TableCell>Дивиденды</TableCell>
+                <TableCell className="text-right">{formatBalance(
+                  Object.values(dividends).reduce((acc, v) => acc += v, 0) / 100
+                )}</TableCell>
+                {Object.entries(dividends).map(([bankName, amount], id) => (
+                  <TableCell key={`${bankName}-dividends-${id}`} className="text-right">
+                    {formatBalance(amount / 100)}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right font-bold">--</TableCell>
+              </TableRow>)
+            }
+
+            {/* Итого движение денежных средств */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">Итого движение денежных средств</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(totalCashFlow)}</TableCell>
+              <TableCell className="text-right font-bold"></TableCell>
+            </TableRow>
+
+            {/* На конец периода */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">На конец периода</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(totalBeginnigFlow + totalCashFlow)}</TableCell>
+              <TableCell className="font-bold"></TableCell>
             </TableRow>
           </TableBody>
         </Table>

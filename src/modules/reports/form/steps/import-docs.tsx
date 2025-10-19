@@ -19,8 +19,8 @@ import {
 } from "@/shared/ui/select";
 import { Input } from "@/shared/ui/input";
 import { formatDate } from "@/shared/lib/dayjs";
+import { type Bank } from '@/shared/models';
 
-type Bank = 'CRM' | 'Halyk' | 'Kaspi'
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -104,10 +104,10 @@ export const ImportDocsStepForm = () => {
           bankName: documentType || '',
         });
       }
-      setDocumentType(undefined)
     } catch (error) {
       console.error(error);
     }
+    setDocumentType(undefined)
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -248,7 +248,7 @@ export const ImportDocsStepForm = () => {
             onValueChange={(value: Bank) =>
               setDocumentType(value)
             }
-            disabled={isUpdating}
+            disabled={isUpdating || isParsing}
           >
             <SelectTrigger className="w-26 h-6 text-xs ml-1 inline-flex">
               <SelectValue />
@@ -473,7 +473,7 @@ export const ImportDocsStepForm = () => {
       <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Транзакции: {selectedDocument?.name}</DialogTitle>
+            <DialogTitle>Транзакции: {selectedDocument?.name.slice(0,25)}...</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
             {selectedDocument?.transactions.length > 0 ? (

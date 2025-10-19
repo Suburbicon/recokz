@@ -13,10 +13,10 @@ import { Typography } from "@/shared/ui/typography";
 import { DeleteTransactionTypeButton } from "./delete";
 
 export function TransactionTypeList() {
-  const { data: incomeTypes } = api.transactionType.getAll.useQuery({
+  const { data: incomeTypes } = api.transactionType.getTransactionTypeByCategory.useQuery({
     category: "income",
   });
-  const { data: expenseTypes } = api.transactionType.getAll.useQuery({
+  const { data: expenseTypes } = api.transactionType.getTransactionTypeByCategory.useQuery({
     category: "expense",
   });
 

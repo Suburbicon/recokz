@@ -4,6 +4,28 @@ import { z } from "zod";
 
 export const transactionTypeRouter = createTRPCRouter({
   getAll: protectedProcedure
+    .query(async ({ ctx, input }) => {
+      const transactionTypes = await ctx.prisma.transactionType.findMany({
+        include: {
+          organization: true,
+        },
+        where: {
+          OR: [
+            {
+              organizationId: null,
+            },
+            {
+              organizationId: ctx.organizationId || null,
+            },
+          ],
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      return transactionTypes;
+    }),
+  getTransactionTypeByCategory: protectedProcedure
     .input(
       z.object({
         category: z.enum(["income", "expense"]),
@@ -15,6 +37,7 @@ export const transactionTypeRouter = createTRPCRouter({
           organization: true,
         },
         where: {
+          category: input.category,
           OR: [
             {
               organizationId: null,

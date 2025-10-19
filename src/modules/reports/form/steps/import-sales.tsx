@@ -32,7 +32,7 @@ type ReconciliationWithRelations = Prisma.ReconciliationGetPayload<
   typeof reconciliationWithRelations
 >;
 
-type TransactionType = 'Kaspi' | 'Halyk' | 'CRM' | 'Cash';
+export type TransactionType = 'Kaspi' | 'Halyk' | 'CRM' | 'Cash';
 
 export const formSchema = z.object({
   addedBy: z.string({ message: "Обязательное поле" }).min(1, "Обязательное поле"),
@@ -74,9 +74,7 @@ export const ImportSales = () => {
     }
   })
 
-  const { data: transactionTypes } = api.transactionType.getAll.useQuery({
-    category: "income",
-  });
+  const { data: transactionTypes } = api.transactionType.getAll.useQuery();
 
   const { mutateAsync: createTransaction, isPending: isPendingCreateTransaction } = api.transaction.create.useMutation({
     onSuccess: () => {
@@ -184,7 +182,8 @@ export const ImportSales = () => {
               if (
                 reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
                 typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
-                reconciliation.bankTransaction.meta.bank === currentTransactionFilter
+                reconciliation.bankTransaction.meta.bank === currentTransactionFilter &&
+                !(reconciliation.bankTransaction.meta['Назначение платежа'] || '').toString().includes('Расчеты по карточкам')
               ) {
                 return true;
               }
@@ -243,6 +242,20 @@ export const ImportSales = () => {
     return report?.documents.some(d => d.balance === knpAmount)
   }, [report])
 
+  const notReconciliatedCrmTransactions = useMemo(() => {
+    return report?.reconciliations
+      .filter((reconciliation) => {
+        if (
+          !reconciliation.bankTransaction &&
+          reconciliation.crmTransaction?.amount &&
+          reconciliation.crmTransaction.meta && typeof reconciliation.crmTransaction.meta === 'object' && 'bank' in reconciliation.crmTransaction.meta && reconciliation.crmTransaction.meta.bank === currentTransactionFilter
+        ) {
+          return true
+        }
+        return false
+      })
+  }, [report, currentTransactionFilter])
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -295,15 +308,6 @@ export const ImportSales = () => {
       return false;
     })
     .sort(filterByDateReconciliations);
-
-  const notReconciliatedCrmTransactions = report.reconciliations
-    .filter((reconciliation) => {
-      if (
-        !reconciliation.bankTransaction &&
-        reconciliation.crmTransaction?.amount
-      ) return true
-      return false
-    })
 
   // Filter reconciliations with positive amounts (income transactions)
   const incomeReconciliations = report.reconciliations
@@ -547,8 +551,9 @@ export const ImportSales = () => {
                       handleViewReconciliations={handleViewReconciliations}
                       handleCreateReconcile={handleCreateReconcile}
                       handleReconciliationCreate={handleReconciliationCreate}
-                      notReconciliatedCrmTransactions={notReconciliatedCrmTransactions}
+                      notReconciliatedCrmTransactions={notReconciliatedCrmTransactions || []} 
                       pickedCrmTransactions={pickedCrmTransactions}
+                      currentTransactionFilter={currentTransactionFilter}
                       type="bank"
                       isMini={false}
                     />
@@ -767,7 +772,7 @@ export const ImportSales = () => {
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               <div className="max-h-96 overflow-y-auto scrollbar-hide">
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {notReconciliatedCrmTransactions.map((reconciliation) => (
+                  {notReconciliatedCrmTransactions?.map((reconciliation) => (
                     <ReconciliationRow
                       key={reconciliation.id}
                       reconciliation={reconciliation}

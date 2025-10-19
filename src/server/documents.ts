@@ -155,6 +155,17 @@ export const documentsRouter = createTRPCRouter({
             acc[acc.length - 1].meta.bank = input.bankName
           }
 
+          if (input.bankName === 'Halyk') {
+            if (acc[acc.length - 1].meta['Комиссия за транзакции']) {
+              acc.push({
+                date: parsedDate.toISOString(),
+                amount: Number(acc[acc.length - 1].meta['Комиссия за транзакции']),
+                meta: acc[acc.length - 1].meta,
+                transactionId: (row[columnsMap.transactionId] || 0).toString()
+              })
+            }
+          }
+
           if (input.bankName === 'CRM') {
             switch(acc[acc.length - 1].meta['Payment source']) {
               case 'Халык банк':

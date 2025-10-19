@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, XCircle, DollarSign } from "lucide-react";
-import { Prisma, Transaction, TransactionType } from "@prisma/client";
+import { Prisma, Transaction } from "@prisma/client";
 import {
   Select,
   SelectContent,
@@ -10,6 +10,7 @@ import {
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import { CustomCheckbox } from "@/shared/ui/checkbox";
+import { TransactionType } from '../import-sales';
 
 
 const reconciliationWithRelations = {
@@ -36,7 +37,8 @@ export const ReconciliationRowV2 = ({
     handlePickCrmTransactions,
     type,
     isMini,
-    notReconciliatedCrmTransactions
+    notReconciliatedCrmTransactions,
+    currentTransactionFilter
 } : {
     reconciliations: ReconciliationWithRelations[],
     transactionTypes: any,
@@ -49,7 +51,8 @@ export const ReconciliationRowV2 = ({
     handlePickCrmTransactions?: any,
     type: 'bank' | 'crm',
     isMini: boolean,
-    notReconciliatedCrmTransactions: ReconciliationWithRelations[]
+    notReconciliatedCrmTransactions: ReconciliationWithRelations[],
+    currentTransactionFilter: TransactionType
 }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const formatBalance = (balanceInKopecks: number) => {
@@ -185,23 +188,49 @@ export const ReconciliationRowV2 = ({
         >
             <div className="flex items-center justify-between w-full">
                 {reconciliations.some(r => r.bankTransactionId) ? (
-                    <div className="flex items-center justify-between p-2 bg-gray-600 rounded-xl space-x-4 text-base">
-                        <div className="flex flex-col">
-                            <span className="text-sm">
-                                {formatDate(getTransactionDate(reconciliations[0]))}
-                            </span>
-                            <span className="font-bold">
-                                {formatBalance(
-                                    getTransactionAmount(reconciliations, 'bank'),
-                                )}
-                            </span>
-                            <span>
-                                
-                            </span>
+                    <div className="flex flex-col justify-between p-2 bg-gray-600 rounded-xl space-y-2 text-base">
+                        {(isResolved(reconciliations) && currentTransactionFilter !== 'CRM') && (
+                            <div className="flex-shrink-0">
+                                <Select
+                                    value={reconciliations[0].typeId || ""}
+                                    onValueChange={(value) =>
+                                        reconciliations.forEach(r => {
+                                            handleTypeChange(r.id, value)
+                                        })
+                                    }
+                                    disabled={isUpdatingReconciliation}
+                                >
+                                    <SelectTrigger className="w-32 h-7 text-xs">
+                                        <SelectValue placeholder="Тип" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {transactionTypes?.map((type: any) => (
+                                        <SelectItem key={type.id} value={type.id}>
+                                            {type.name}
+                                        </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        <div className="flex items-center justify-between space-x-4">
+                            <div className="flex flex-col">
+                                <span className="text-sm">
+                                    {formatDate(getTransactionDate(reconciliations[0]))}
+                                </span>
+                                <span className="font-bold">
+                                    {formatBalance(
+                                        getTransactionAmount(reconciliations, 'bank'),
+                                    )}
+                                </span>
+                                <span>
+                                    
+                                </span>
+                            </div>
+                            <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
+                                Детали
+                            </Button>
                         </div>
-                        <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
-                            Детали
-                        </Button>
                     </div>
                 ) : (
                     <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
@@ -238,7 +267,7 @@ export const ReconciliationRowV2 = ({
                         </div>
                     ) : (
                         <div className="flex flex-col space-y-2 p-2 bg-gray-600 rounded-xl text-base">
-                            {!isResolved(reconciliations) && (
+                            {(currentTransactionFilter !== 'CRM' && (reconciliations[0].crmTransaction?.meta && typeof reconciliations[0].crmTransaction?.meta === 'object' && 'byCash' in reconciliations[0].crmTransaction?.meta && reconciliations[0].crmTransaction?.meta?.byCash)) && (
                                 <div className="flex-shrink-0">
                                     <Select
                                         value={reconciliations[0].typeId || ""}
