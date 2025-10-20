@@ -193,14 +193,14 @@ export function ResultTable() {
       }, 0) || 0;
 
   const totalNotMatchedCrmDocuments =
-    report.reconciliations
+    (report.reconciliations
       ?.filter((r) => {
         return r.crmTransaction?.amount && !r.bankTransactionId;
       })
       .reduce((sum, r) => {
         const amount = r.crmTransaction?.amount || 0;
         return sum + amount;
-      }, 0) || 0;
+      }, 0) || 0) / 100;
 
   return (
     <div className="space-y-6 p-6">
@@ -239,7 +239,7 @@ export function ResultTable() {
                 <TableCell>__{typeName}__</TableCell>
                 <TableCell className="text-right">{Object.values(val).reduce((acc, v) => acc += Math.abs(v), 0)}</TableCell>
                 {Object.keys(bankDocuments).map((bankName, id) => (
-                  <TableCell key={`${bankName}-income-${id}`} className="text-right">{val[bankName as Bank]}</TableCell>
+                  <TableCell key={`${bankName}-income-${id}`} className="text-right">{val[bankName as Bank] || '--'}</TableCell>
                 ))}
                 <TableCell className="text-right">{val['CRM'] || '--'}</TableCell>
               </TableRow>
@@ -286,7 +286,9 @@ export function ResultTable() {
                     {formatBalance(amount / 100)}
                   </TableCell>
                 ))}
-                <TableCell className="text-right font-bold">--</TableCell>
+                {Object.values(cashIncome).length ? 
+                  <TableCell className="text-right font-bold">--</TableCell> 
+                  : <TableCell className="text-right font-bold"></TableCell>}
               </TableRow>)
             }
 
@@ -302,7 +304,9 @@ export function ResultTable() {
                     {formatBalance(amount / 100)}
                   </TableCell>
                 ))}
-                <TableCell className="text-right font-bold">--</TableCell>
+                {Object.values(dividends).length ? 
+                  <TableCell className="text-right font-bold">--</TableCell> 
+                  : <TableCell className="text-right font-bold"></TableCell>}
               </TableRow>)
             }
 
@@ -313,10 +317,17 @@ export function ResultTable() {
               <TableCell className="text-right font-bold"></TableCell>
             </TableRow>
 
+            {/* Продажи, не поступившие на расчетные счета */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">Продажи, не поступившие на расчетные счета</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(totalNotMatchedCrmDocuments)}</TableCell>
+              <TableCell className="font-bold"></TableCell>
+            </TableRow>
+
             {/* На конец периода */}
             <TableRow className="bg-green-50 dark:bg-green-950/10">
               <TableCell className="font-bold">На конец периода</TableCell>
-              <TableCell className="text-right font-bold">{formatBalance(totalBeginnigFlow + totalCashFlow)}</TableCell>
+              <TableCell className="text-right font-bold">{formatBalance(totalBeginnigFlow + totalCashFlow + totalNotMatchedCrmDocuments)}</TableCell>
               <TableCell className="font-bold"></TableCell>
             </TableRow>
           </TableBody>
