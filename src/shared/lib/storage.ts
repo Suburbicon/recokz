@@ -1,23 +1,18 @@
-export class TokenStorage {
+export class RekassaStorage {
     constructor() {}
 
-    saveToStorage(accessToken: string, refreshToken: string) {
+    saveToStorage(id: string, token: string) {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('rekassa', JSON.stringify({
+                'id': id,
+                'token': token
+            }));
         }
     }
 
-    getRefreshToken() {
+    getRekassaData() {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('refreshToken') || 'not-found';
-        }
-        return null
-    }
-
-    getAccessToken() {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('accessToken') || 'not-found';
+            return JSON.parse(localStorage.getItem('rekassa') || 'not-found');
         }
         return null
     }

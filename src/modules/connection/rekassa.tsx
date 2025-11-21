@@ -1,0 +1,73 @@
+"use client";
+import { useUser } from '@clerk/clerk-react';
+import { useState } from "react";
+import { api } from '@/shared/client';
+import { LoaderIcon } from '@/shared/ui/loader'
+import { toast } from 'sonner';
+import Image from "next/image";
+import { RekassaStorage } from '@/shared/lib/storage';
+
+ 
+export const Main = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [rekassaData, setRekassaData] = useState({
+        number: '',
+        password: ''
+    });
+    const { user } = useUser();
+
+    if (!user || isLoading) {
+        return <div className="p-6">
+            <LoaderIcon className='animate-spin' />
+        </div>;
+    }
+    
+    const connectToRekassa = async () => {
+        setIsLoading(true)
+        try {
+            const response = await api.post(
+                `${process.env.NEXT_PUBLIC_API_REKASSA}/api/auth/login?apiKey=${process.env.NEXT_PUBLIC_API_KEY_REKASSA}&format=json`,
+                rekassaData
+            )
+            const storage = new RekassaStorage();
+            storage.saveToStorage(response.data.id, response.data.token)
+        } catch (e) {
+            console.log(e)
+        }
+
+        setIsLoading(false)
+    }
+
+    return (
+        <div className="p-6">
+            <h1 className='mb-4 text-3xl'>Страница подключения к Rekassa</h1>
+            <div className='flex flex-col items-start space-y-4'>
+                <label className="flex flex-col w-full">
+                    Введите ЗНМ
+                    <input 
+                        type="text" 
+                        className='p-2 border border-2 border-gray rounded-xl' 
+                        placeholder="M6Z4Q95L-BLZ"
+                        onChange={(e) => setRekassaData(prev => ({...prev, number: e.target.value}))}
+                    />
+                </label>
+                <label className="flex flex-col w-full">
+                    Введите Пароль кассы для интеграции
+                    <input 
+                        type="text" 
+                        className='p-2 border border-2 border-gray rounded-xl' 
+                        placeholder="KqUV#oxSi*GvjiKyRi983HIp79GgAzWI"
+                        onChange={(e) => setRekassaData(prev => ({...prev, password: e.target.value}))}
+                    />
+                </label>
+                <button 
+                    type="button"
+                    className='p-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 transition-colors'
+                    onClick={connectToRekassa}
+                >
+                    Подключить
+                </button>
+            </div>
+        </div>
+    );
+}

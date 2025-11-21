@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { Main } from '@/modules/connection/main'
+import { Main } from '@/modules/connection/rekassa'
 
-function TransactionsTableWithSuspense() {
+function RekassaConnection() {
   return (
     <Suspense fallback={<div className="p-6">...Loading</div>}>
         <Main/>
@@ -12,7 +12,7 @@ function TransactionsTableWithSuspense() {
 export default async function Page() {
   return (
     <div className="p-6">
-      <TransactionsTableWithSuspense />
+      <RekassaConnection />
     </div>
   );
 }

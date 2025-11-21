@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ChangeEvent } from 'react';
-import { TrashIcon } from "lucide-react";
+import { TrashIcon, ArrowRightFromLineIcon } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -19,6 +19,10 @@ import { api as axiosApi } from '@/shared/client'
 import { toast } from 'sonner';
 import { useUser } from '@clerk/clerk-react';
 import { CustomCheckbox } from "@/shared/ui/checkbox";
+import { RekassaStorage } from '@/shared/lib/storage';
+import { formatDateToCustomObject } from '../utils'
+import { Axios, AxiosError } from 'axios';
+
 
 export function TransactionsTable() {
   const { user } = useUser();
@@ -159,6 +163,92 @@ export function TransactionsTable() {
     setLoading(false);
   }
 
+  const sendToRekassa = async (transaction: Transaction) => {
+    setLoading(true);
+
+    try {
+      const storage = new RekassaStorage();
+      const data = storage.getRekassaData();
+
+      if (!data.id) {
+        toast.error('Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)')
+        return
+      }
+
+      const now = new Date();
+      const formattedDate = formatDateToCustomObject(now);
+      const price = transaction.amount.toString();
+
+      await axiosApi.post(
+        `${process.env.NEXT_PUBLIC_API_REKASSA}/api/crs/${data.id}/tickets`,
+        {
+          "operation" : "OPERATION_SELL",
+          ...formattedDate,
+          "domain" : {
+            "type" : "DOMAIN_SERVICES"
+          },
+          "items" : [ {
+            "type" : "ITEM_TYPE_COMMODITY",
+            "commodity" : {
+              "name" : "Позиция",
+              "sectionCode" : "1",
+              "quantity" : 1000,
+              "price" : {
+                "bills" : price,
+                "coins" : 0
+              },
+              "sum" : {
+                "bills" : price,
+                "coins" : 0
+              },
+              "auxiliary" : [ {
+                "key" : "UNIT_TYPE",
+                "value" : "PIECE"
+              } ]
+            }
+          } ],
+          "payments" : [ {
+            "type" : "PAYMENT_CARD", // PAYMENT_CASH / PAYMENT_CARD
+            "sum" : {
+              "bills" : price,
+              "coins" : 0
+            }
+          } ],
+          "amounts" : {
+            "total" : {
+              "bills" : price,
+              "coins" : 0
+            },
+            "taken" : {
+              "bills" : price,
+              "coins" : 0
+            },
+            "change" : {
+              "bills" : "0",
+              "coins" : 0
+            }
+          }
+        },
+        { headers: {
+          'Authorization': `Bearer ${data.token}`,
+          'X-Request-ID': crypto.randomUUID()
+        }}
+      )      
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        if (e.status === 401) {
+          toast.error('Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)')
+        } else {
+          toast.error(e.message)
+        }
+      } else {
+        toast.error(e as string)
+      }
+    }
+
+    setLoading(false);
+  }
+
   return (
     <div className="flex flex-col gap-8 mb-12">
       <div className="flex justify-between flex gap-4">
@@ -265,6 +355,13 @@ export function TransactionsTable() {
                     <div className="flex">
                       <button type='button' className='cursor-pointer' onClick={() => deleteHandler(item)}>
                         <TrashIcon/>
+                      </button>
+                    </div>
+                  )}
+                  {item.bankTransactionId && (
+                    <div className="flex">
+                      <button type='button' className='cursor-pointer' onClick={() => sendToRekassa(item)}>
+                        <ArrowRightFromLineIcon/>
                       </button>
                     </div>
                   )}

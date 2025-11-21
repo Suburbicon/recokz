@@ -75,14 +75,14 @@ export function ReportsSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {/* <SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link href="/cabinet/connection">
                     <ChevronsLeftRightEllipsisIcon />
-                    <span>POS-Терминал</span>
+                    <span>Rekassa</span>
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem> */}
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
