@@ -7,7 +7,10 @@ export const crmTransactionRouter = createTRPCRouter({
         .query(async ({ ctx, input}) => {
             const transactions = await ctx.prisma.crmTransaction.findMany({
                 where: {
-                    organizationId: ctx.organizationId
+                    organizationId: ctx.organizationId,
+                    transactionId: {
+                        not: '0'
+                    }
                 },
                 orderBy: {
                     createdAt: "desc"
