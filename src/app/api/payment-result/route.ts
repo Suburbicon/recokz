@@ -49,9 +49,7 @@ export async function POST(request: Request) {
     }
 
     if (bankTransaction) {
-      console.log(transaction_ids)
       for (const tr_id of transaction_ids) {
-        console.log(tr_id)
         await prisma.crmTransaction.update({
           where: {
             id: tr_id

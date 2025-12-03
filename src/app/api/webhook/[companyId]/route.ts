@@ -10,26 +10,6 @@ export async function POST(
   const params = await context.params;
   const { companyId } = params;
 
-  if (!data.resource) {
-    try {
-      await prisma.crmTransaction.create({
-        data: {
-          amount: '100',
-          date: dayjs().toISOString(),
-          meta: data,
-          transactionId: '0',
-          organizationId: companyId,
-          bankTransactionId: null
-        },
-      });
-    } catch (e) {
-      console.error(e);
-      return NextResponse.json({ error: e }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  }
-
   const parsedDate = dayjs(data.data?.date);
   
   const parsedResultDate = parsedDate.isValid()
