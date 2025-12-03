@@ -323,7 +323,7 @@ export function TransactionsTable() {
                 <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>
                   { 
-                    `${item.meta?.data?.expense?.title} (${item.meta?.data?.account?.title})`
+                    `${item.meta.crm} ${item.meta?.data?.expense?.title || ''} (${item.meta?.data?.account?.title || ''})`
                   }
                 </TableCell>
                 <TableCell>

@@ -30,7 +30,7 @@ export async function POST(
       data: {
         amount: (Number(resData.sum) / 100)?.toString() || '-',
         date: parsedResultDate,
-        meta: resData,
+        meta: {...resData, 'crm': 'MoySklad'},
         transactionId: resData.name,
         organizationId: companyId,
         bankTransactionId: null

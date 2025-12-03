@@ -56,6 +56,7 @@ export interface Transaction {
         resource: string;
         company_id: number;
         resource_id: number;
+        crm: string;
     };
     documentId: string | null;
     organizationId: string;
