@@ -22,7 +22,7 @@ export async function POST(
         data: {
           amount: data.data?.amount?.toString() || '-',
           date: parsedResultDate,
-          meta: {...data, 'crm': 'altegio'},
+          meta: {...data, 'crm': 'Altegio'},
           transactionId: data.data?.document_id?.toString() || '0',
           organizationId: companyId,
           bankTransactionId: null

@@ -322,9 +322,10 @@ export function TransactionsTable() {
                 </TableCell>
                 <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>
-                  { 
-                    `${item.meta.crm} ${item.meta?.data?.expense?.title || ''} (${item.meta?.data?.account?.title || ''})`
-                  }
+                  <div className='flex flex-col'>
+                    <p>{ `${item.meta.crm || ''} ${item.meta?.data?.expense?.title || ''}` }</p>
+                    <p>{ `${item.meta?.data?.account?.title || ''}` }</p>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {!checkedTransactions.includes(item.id) && (
