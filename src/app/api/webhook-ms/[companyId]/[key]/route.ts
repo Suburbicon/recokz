@@ -28,7 +28,7 @@ export async function POST(
 
     await prisma.crmTransaction.create({
       data: {
-        amount: resData.sum?.toString() || '-',
+        amount: (Number(resData.sum) / 100)?.toString() || '-',
         date: parsedResultDate,
         meta: resData,
         transactionId: resData.name,
