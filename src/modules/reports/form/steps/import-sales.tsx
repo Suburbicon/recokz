@@ -15,9 +15,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/shared/ui/dialog";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { ReconciliationRow } from "./components/ReconciliationRow";
-import { ReconciliationRowV2 } from './components/ReconciliationRowV2';
+import { ReconciliationRowV2 } from "./components/ReconciliationRowV2";
 import { Input } from "@/shared/ui/input";
 
 const reconciliationWithRelations = {
@@ -32,58 +32,77 @@ type ReconciliationWithRelations = Prisma.ReconciliationGetPayload<
   typeof reconciliationWithRelations
 >;
 
-export type TransactionType = 'Kaspi' | 'Halyk' | 'CRM' | 'Cash';
+export type TransactionType = "Kaspi" | "Halyk" | "CRM" | "Cash";
 
 export const formSchema = z.object({
-  addedBy: z.string({ message: "Обязательное поле" }).min(1, "Обязательное поле"),
-  purpose: z.string({ message: "Обязательное поле" }).min(1, "Обязательное поле")
+  addedBy: z
+    .string({ message: "Обязательное поле" })
+    .min(1, "Обязательное поле"),
+  purpose: z
+    .string({ message: "Обязательное поле" })
+    .min(1, "Обязательное поле"),
 });
 
 type SchemaType = z.infer<typeof formSchema>;
 
 export const ImportSales = () => {
   const params = useParams<{ id: string }>();
-  const [isModalReconciliationDetailOpen, setIsModalReconciliationDetailOpen] = useState(false);
-  const [isModalReconciliationsDetailOpen, setIsModalReconciliationsDetailOpen] = useState(false);
-  const [isModalReconciliationCreateOpen, setIsModalReconciliationCreateOpen] = useState(false);
-  const [isModalReconcileCreateOpen, setIsModalReconcileCreateOpen] = useState(false);
-  const [currentBankReconciliation, setCurrentBankReconciliation] = useState<ReconciliationWithRelations>();
-  const [currentReconciliations, setCurrentReconciliations] = useState<ReconciliationWithRelations[]>([]);
-  const [pickedCrmTransactions, setPickedCrmTransactions] = useState<string[]>([]);
-  const [currentTransactionFilter, setCurrentTransactionFilter] = useState<TransactionType>('Kaspi')
+  const [isModalReconciliationDetailOpen, setIsModalReconciliationDetailOpen] =
+    useState(false);
+  const [
+    isModalReconciliationsDetailOpen,
+    setIsModalReconciliationsDetailOpen,
+  ] = useState(false);
+  const [isModalReconciliationCreateOpen, setIsModalReconciliationCreateOpen] =
+    useState(false);
+  const [isModalReconcileCreateOpen, setIsModalReconcileCreateOpen] =
+    useState(false);
+  const [currentBankReconciliation, setCurrentBankReconciliation] =
+    useState<ReconciliationWithRelations>();
+  const [currentReconciliations, setCurrentReconciliations] = useState<
+    ReconciliationWithRelations[]
+  >([]);
+  const [pickedCrmTransactions, setPickedCrmTransactions] = useState<string[]>(
+    [],
+  );
+  const [currentTransactionFilter, setCurrentTransactionFilter] =
+    useState<TransactionType>("Kaspi");
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
   });
 
-  const { 
-    mutateAsync: updateReconciliation, 
-    isPending: isUpdatingReconciliation 
+  const {
+    mutateAsync: updateReconciliation,
+    isPending: isUpdatingReconciliation,
   } = api.reconciliation.updateReconcile.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
-    }
-  })
+    },
+  });
 
-  const { 
-    mutateAsync: updateBankReconciliation, 
-    isPending: isUpdatingBankReconciliation 
+  const {
+    mutateAsync: updateBankReconciliation,
+    isPending: isUpdatingBankReconciliation,
   } = api.reconciliation.updateBankReconcile.useMutation({
     onSuccess: () => {
       utils.reports.getById.invalidate({ id: params.id });
-    }
-  })
+    },
+  });
 
   const { data: transactionTypes } = api.transactionType.getAll.useQuery();
 
-  const { mutateAsync: createTransaction, isPending: isPendingCreateTransaction } = api.transaction.create.useMutation({
+  const {
+    mutateAsync: createTransaction,
+    isPending: isPendingCreateTransaction,
+  } = api.transaction.create.useMutation({
     onSuccess: () => {
-      toast.success('Транзакция успешно создалась');
+      toast.success("Транзакция успешно создалась");
     },
     onError: () => {
-      toast.error('Транзакция не создалась');
-    }
-  })
+      toast.error("Транзакция не создалась");
+    },
+  });
 
   const utils = api.useUtils();
   const {
@@ -105,8 +124,8 @@ export const ImportSales = () => {
   const form = useForm<SchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      addedBy: '',
-      purpose: ''
+      addedBy: "",
+      purpose: "",
     },
   });
 
@@ -129,21 +148,24 @@ export const ImportSales = () => {
     return new Date();
   };
 
-  const filterByDateReconciliations = useCallback((a: ReconciliationWithRelations, b: ReconciliationWithRelations) => {
-    // Sort by transaction date (newest first), then by reconciliation ID for stability
-    const dateA = getTransactionDate(a);
-    const dateB = getTransactionDate(b);
-    
-    const dateDiff = new Date(dateB).getTime() - new Date(dateA).getTime();
-    if (dateDiff !== 0) return dateDiff;
+  const filterByDateReconciliations = useCallback(
+    (a: ReconciliationWithRelations, b: ReconciliationWithRelations) => {
+      // Sort by transaction date (newest first), then by reconciliation ID for stability
+      const dateA = getTransactionDate(a);
+      const dateB = getTransactionDate(b);
 
-    // If dates are the same, sort by reconciliation ID for consistent ordering
-    return a.id.localeCompare(b.id);
-  }, [])
+      const dateDiff = new Date(dateB).getTime() - new Date(dateA).getTime();
+      if (dateDiff !== 0) return dateDiff;
 
-  const chooseTypeBank = (bank: TransactionType ) => {
-    setCurrentTransactionFilter(bank)
-  }
+      // If dates are the same, sort by reconciliation ID for consistent ordering
+      return a.id.localeCompare(b.id);
+    },
+    [],
+  );
+
+  const chooseTypeBank = (bank: TransactionType) => {
+    setCurrentTransactionFilter(bank);
+  };
 
   const handleNext = async () => {
     try {
@@ -158,103 +180,125 @@ export const ImportSales = () => {
 
   const reconciliations = useMemo(() => {
     if (report) {
-      switch(currentTransactionFilter) {
-        case 'Kaspi':
-          return Object.groupBy(report.reconciliations
-            .filter((reconciliation) => {
-              if (
-                reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
-                typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
-                reconciliation.bankTransaction.meta.bank === currentTransactionFilter &&
-                reconciliation.bankTransaction.meta['КНП'] !== '190'
-              ) {
-                return true;
-              }
+      switch (currentTransactionFilter) {
+        case "Kaspi":
+          return Object.groupBy(
+            report.reconciliations
+              .filter((reconciliation) => {
+                if (
+                  reconciliation.bankTransaction &&
+                  reconciliation.bankTransaction.meta &&
+                  typeof reconciliation.bankTransaction.meta === "object" &&
+                  "bank" in reconciliation.bankTransaction?.meta &&
+                  reconciliation.bankTransaction.meta.bank ===
+                    currentTransactionFilter &&
+                  reconciliation.bankTransaction.meta["КНП"] !== "190"
+                ) {
+                  return true;
+                }
 
-              return false;
-            })
-            .sort(filterByDateReconciliations),
-            rec => rec.bankTransactionId!
-          )
-        case 'Halyk':
-          return Object.groupBy(report.reconciliations
-            .filter((reconciliation) => {
-              if (
-                reconciliation.bankTransaction && reconciliation.bankTransaction.meta &&
-                typeof reconciliation.bankTransaction.meta === 'object' && 'bank' in reconciliation.bankTransaction?.meta &&
-                reconciliation.bankTransaction.meta.bank === currentTransactionFilter &&
-                !(reconciliation.bankTransaction.meta['Назначение платежа'] || '').toString().includes('Расчеты по карточкам')
-              ) {
-                return true;
-              }
+                return false;
+              })
+              .sort(filterByDateReconciliations),
+            (rec) => rec.bankTransactionId!,
+          );
+        case "Halyk":
+          return Object.groupBy(
+            report.reconciliations
+              .filter((reconciliation) => {
+                if (
+                  reconciliation.bankTransaction &&
+                  reconciliation.bankTransaction.meta &&
+                  typeof reconciliation.bankTransaction.meta === "object" &&
+                  "bank" in reconciliation.bankTransaction?.meta &&
+                  reconciliation.bankTransaction.meta.bank ===
+                    currentTransactionFilter &&
+                  !(
+                    reconciliation.bankTransaction.meta["Назначение платежа"] ||
+                    ""
+                  )
+                    .toString()
+                    .includes("Расчеты по карточкам")
+                ) {
+                  return true;
+                }
 
-              return false;
-            })
-            .sort(filterByDateReconciliations),
-            rec => rec.bankTransactionId!
-          )
-        case 'CRM':
-          return Object.groupBy(report.reconciliations
-            .filter((reconciliation) => {
-              if (reconciliation.crmTransaction) {
-                return true;
-              }
+                return false;
+              })
+              .sort(filterByDateReconciliations),
+            (rec) => rec.bankTransactionId!,
+          );
+        case "CRM":
+          return Object.groupBy(
+            report.reconciliations
+              .filter((reconciliation) => {
+                if (reconciliation.crmTransaction) {
+                  return true;
+                }
 
-              return false;
-            })
-            .sort(filterByDateReconciliations),
-            rec => rec.crmTransactionId!
-          )
-        case 'Cash':
-          return Object.groupBy(report.reconciliations
-            .filter((reconciliation) => {
-              if (reconciliation.crmTransaction && reconciliation.crmTransaction.meta &&
-                typeof reconciliation.crmTransaction.meta === 'object' && 'byCash' in reconciliation.crmTransaction.meta &&
-                reconciliation.crmTransaction.meta.byCash
-              ) {
-                return true;
-              }
+                return false;
+              })
+              .sort(filterByDateReconciliations),
+            (rec) => rec.crmTransactionId!,
+          );
+        case "Cash":
+          return Object.groupBy(
+            report.reconciliations
+              .filter((reconciliation) => {
+                if (
+                  reconciliation.crmTransaction &&
+                  reconciliation.crmTransaction.meta &&
+                  typeof reconciliation.crmTransaction.meta === "object" &&
+                  "byCash" in reconciliation.crmTransaction.meta &&
+                  reconciliation.crmTransaction.meta.byCash
+                ) {
+                  return true;
+                }
 
-              return false;
-            })
-            .sort(filterByDateReconciliations),
-            rec => rec.crmTransactionId!
-          )
+                return false;
+              })
+              .sort(filterByDateReconciliations),
+            (rec) => rec.crmTransactionId!,
+          );
         default:
-          return []
+          return [];
       }
     }
-    return []
+    return [];
   }, [currentTransactionFilter, report, filterByDateReconciliations]);
 
   const isKaspiTransactionsAmountOfDocumentsIsSame = useMemo(() => {
     const knpAmount = report?.reconciliations.reduce((acc, rec) => {
       if (
-        rec.bankTransaction && rec.bankTransaction.meta &&
-        typeof rec.bankTransaction.meta === 'object' && 'КНП' in rec.bankTransaction?.meta &&
-        rec.bankTransaction.meta['КНП'] === '190'
+        rec.bankTransaction &&
+        rec.bankTransaction.meta &&
+        typeof rec.bankTransaction.meta === "object" &&
+        "КНП" in rec.bankTransaction?.meta &&
+        rec.bankTransaction.meta["КНП"] === "190"
       ) {
-        acc += rec.bankTransaction.amount / 100
+        acc += rec.bankTransaction.amount / 100;
       }
-      return acc
-    }, 0)
+      return acc;
+    }, 0);
 
-    return report?.documents.some(d => d.balance === knpAmount)
-  }, [report])
+    return report?.documents.some((d) => d.balance === knpAmount);
+  }, [report]);
 
   const notReconciliatedCrmTransactions = useMemo(() => {
-    return report?.reconciliations
-      .filter((reconciliation) => {
-        if (
-          !reconciliation.bankTransaction &&
-          reconciliation.crmTransaction?.amount &&
-          reconciliation.crmTransaction.meta && typeof reconciliation.crmTransaction.meta === 'object' && 'bank' in reconciliation.crmTransaction.meta && reconciliation.crmTransaction.meta.bank === currentTransactionFilter
-        ) {
-          return true
-        }
-        return false
-      })
-  }, [report, currentTransactionFilter])
+    return report?.reconciliations.filter((reconciliation) => {
+      if (
+        !reconciliation.bankTransaction &&
+        reconciliation.crmTransaction?.amount &&
+        reconciliation.crmTransaction.meta &&
+        typeof reconciliation.crmTransaction.meta === "object" &&
+        "bank" in reconciliation.crmTransaction.meta &&
+        reconciliation.crmTransaction.meta.bank === currentTransactionFilter
+      ) {
+        return true;
+      }
+      return false;
+    });
+  }, [report, currentTransactionFilter]);
 
   if (isLoading) {
     return (
@@ -278,24 +322,21 @@ export const ImportSales = () => {
     );
   }
 
-  const bankReconciliations = Object.groupBy(report.reconciliations
-    .filter((reconciliation) => {
-      if (
-        reconciliation.bankTransaction
-      ) {
+  const bankReconciliations = Object.groupBy(
+    report.reconciliations.filter((reconciliation) => {
+      if (reconciliation.bankTransaction) {
         return true;
       }
 
       return false;
     }),
-    rec => rec.bankTransactionId!
+    (rec) => rec.bankTransactionId!,
   );
 
-  const crmReconciliations = report.reconciliations
-    .filter((reconciliation) => {
-      if (reconciliation.crmTransaction) return true
-      return false
-    });
+  const crmReconciliations = report.reconciliations.filter((reconciliation) => {
+    if (reconciliation.crmTransaction) return true;
+    return false;
+  });
 
   const incomeCrmReconciliations = report.reconciliations
     .filter((reconciliation) => {
@@ -330,72 +371,84 @@ export const ImportSales = () => {
     })
     .sort(filterByDateReconciliations);
 
-  const handleViewReconciliations = (reconciliations: ReconciliationWithRelations[]) => {
+  const handleViewReconciliations = (
+    reconciliations: ReconciliationWithRelations[],
+  ) => {
     setIsModalReconciliationsDetailOpen(true);
     setCurrentReconciliations(reconciliations);
-  }
+  };
 
-  const handleViewTransactions = (reconciliation: ReconciliationWithRelations) => {
+  const handleViewTransactions = (
+    reconciliation: ReconciliationWithRelations,
+  ) => {
     setIsModalReconciliationDetailOpen(true);
     setCurrentBankReconciliation(reconciliation);
-  }
+  };
 
   const handleModalOpenChange = (open: boolean) => {
     setIsModalReconciliationDetailOpen(open);
   };
 
-  const handleReconciliationCreate = (reconciliation: ReconciliationWithRelations) => {
-    setCurrentBankReconciliation(reconciliation)
+  const handleReconciliationCreate = (
+    reconciliation: ReconciliationWithRelations,
+  ) => {
+    setCurrentBankReconciliation(reconciliation);
     setIsModalReconciliationCreateOpen(true);
   };
 
   const handleModalReconciliationCreateChange = (open: boolean) => {
     setIsModalReconciliationCreateOpen(open);
-  }
+  };
 
-  const handleCreateReconcile = (reconciliation: ReconciliationWithRelations) => {
+  const handleCreateReconcile = (
+    reconciliation: ReconciliationWithRelations,
+  ) => {
     setIsModalReconcileCreateOpen(true);
-    setCurrentBankReconciliation(reconciliation)
-  }
+    setCurrentBankReconciliation(reconciliation);
+  };
 
   const handleModalReconcileCreateChange = (open: boolean) => {
     setIsModalReconcileCreateOpen(open);
-  }
+  };
 
   const handlePickCrmTransactions = (transactionId: string) => {
     if (pickedCrmTransactions.includes(transactionId)) {
-      setPickedCrmTransactions(prev => prev.filter(tId => tId !== transactionId))
-      return
+      setPickedCrmTransactions((prev) =>
+        prev.filter((tId) => tId !== transactionId),
+      );
+      return;
     }
 
-    setPickedCrmTransactions(prev => [...prev, transactionId])
-  }
+    setPickedCrmTransactions((prev) => [...prev, transactionId]);
+  };
 
   const handleCreateNewReconciliation = async () => {
-    if (currentBankReconciliation && currentBankReconciliation.bankTransactionId) {
-
+    if (
+      currentBankReconciliation &&
+      currentBankReconciliation.bankTransactionId
+    ) {
       await updateReconciliation({
         reconciliationId: currentBankReconciliation.id,
         crmTransactionsIds: pickedCrmTransactions,
-        bankTransactionId: currentBankReconciliation.bankTransactionId
-      })
+        bankTransactionId: currentBankReconciliation.bankTransactionId,
+      });
 
       setIsModalReconciliationCreateOpen(false);
-      setPickedCrmTransactions([])
-      toast.success('Транзакция успешно сверилась');
+      setPickedCrmTransactions([]);
+      toast.success("Транзакция успешно сверилась");
     }
-  }
+  };
 
   // const totalIncome = Object.values(bankReconciliations).reduce((sum, reconciliation) => {
   //   return sum + getTransactionAmount(reconciliation![0]);
   // }, 0);
 
   const bankTurnover = Object.values(bankReconciliations).reduce((sum, rec) => {
-    return sum + (rec![0].bankTransaction?.amount || 0)
+    return sum + (rec![0].bankTransaction?.amount || 0);
   }, 0);
 
   const crmTurnover = crmReconciliations.reduce((sum, rec) => {
-    return sum + (rec.crmTransaction?.amount || 0)
+    return sum + (rec.crmTransaction?.amount || 0);
   }, 0);
 
   const getTransactionTypeName = (typeId: string | null) => {
@@ -422,26 +475,29 @@ export const ImportSales = () => {
   };
 
   const handleSubmit = async (values: SchemaType) => {
-    if (currentBankReconciliation && currentBankReconciliation.bankTransactionId) {
+    if (
+      currentBankReconciliation &&
+      currentBankReconciliation.bankTransactionId
+    ) {
       const crmTransaction = await createTransaction({
         amount: currentBankReconciliation.bankTransaction!.amount,
         documentId: incomeCrmReconciliations[0].crmTransaction!.documentId!,
         meta: {
-          'Purpose': values.purpose,
-          'Added by': values.addedBy
-        },   
-      })
+          Purpose: values.purpose,
+          "Added by": values.addedBy,
+        },
+      });
 
       await updateBankReconciliation({
         reconciliationId: currentBankReconciliation.id,
         bankTransactionId: currentBankReconciliation.bankTransactionId,
-        crmTransactionId: crmTransaction.id
+        crmTransactionId: crmTransaction.id,
       });
 
       setIsModalReconcileCreateOpen(false);
-      toast.success('Транзакция успешно сверилась');
+      toast.success("Транзакция успешно сверилась");
     }
-  }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -451,7 +507,8 @@ export const ImportSales = () => {
           {!isKaspiTransactionsAmountOfDocumentsIsSame && (
             <div className="mb-3 text-red-500">
               <p>
-                Сумма из Отчета по продажам не равна сумме Продаж из выписки, проверьте пожалуйста документы!
+                Сумма из Отчета по продажам не равна сумме Продаж из выписки,
+                проверьте пожалуйста документы!
               </p>
             </div>
           )}
@@ -494,39 +551,31 @@ export const ImportSales = () => {
       </div>
 
       <div className="flex items-center space-x-3">
-        <button 
+        <button
           type="button"
-          className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Kaspi' && 'bg-blue-600'}`
-          }
-          onClick={() => chooseTypeBank('Kaspi')}
+          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Kaspi" && "bg-blue-600"}`}
+          onClick={() => chooseTypeBank("Kaspi")}
         >
           Kaspi
         </button>
-        <button 
+        <button
           type="button"
-          className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Halyk' && 'bg-blue-600'}`
-          }
-          onClick={() => chooseTypeBank('Halyk')}
+          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Halyk" && "bg-blue-600"}`}
+          onClick={() => chooseTypeBank("Halyk")}
         >
           Halyk
         </button>
-        <button 
+        <button
           type="button"
-          className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'CRM' && 'bg-blue-600'}`
-          }
-          onClick={() => chooseTypeBank('CRM')}
+          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "CRM" && "bg-blue-600"}`}
+          onClick={() => chooseTypeBank("CRM")}
         >
           CRM
         </button>
-        <button 
+        <button
           type="button"
-          className={
-            `p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === 'Cash' && 'bg-blue-600'}`
-          }
-          onClick={() => chooseTypeBank('Cash')}
+          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Cash" && "bg-blue-600"}`}
+          onClick={() => chooseTypeBank("Cash")}
         >
           Наличные
         </button>
@@ -540,25 +589,28 @@ export const ImportSales = () => {
           <div className="w-[100%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {Object.values(reconciliations).map((reconciliations) => (
-                  reconciliations && (
-                    <ReconciliationRowV2
-                      key={reconciliations[0].id}
-                      reconciliations={reconciliations}
-                      transactionTypes={transactionTypes}
-                      updateReconciliation={updateDataReconciliation}
-                      isUpdatingReconciliation={isUpdatingReconciliation}
-                      handleViewReconciliations={handleViewReconciliations}
-                      handleCreateReconcile={handleCreateReconcile}
-                      handleReconciliationCreate={handleReconciliationCreate}
-                      notReconciliatedCrmTransactions={notReconciliatedCrmTransactions || []} 
-                      pickedCrmTransactions={pickedCrmTransactions}
-                      currentTransactionFilter={currentTransactionFilter}
-                      type="bank"
-                      isMini={false}
-                    />
-                  )
-                ))}
+                {Object.values(reconciliations).map(
+                  (reconciliations) =>
+                    reconciliations && (
+                      <ReconciliationRowV2
+                        key={reconciliations[0].id}
+                        reconciliations={reconciliations}
+                        transactionTypes={transactionTypes}
+                        updateReconciliation={updateDataReconciliation}
+                        isUpdatingReconciliation={isUpdatingReconciliation}
+                        handleViewReconciliations={handleViewReconciliations}
+                        handleCreateReconcile={handleCreateReconcile}
+                        handleReconciliationCreate={handleReconciliationCreate}
+                        notReconciliatedCrmTransactions={
+                          notReconciliatedCrmTransactions || []
+                        }
+                        pickedCrmTransactions={pickedCrmTransactions}
+                        currentTransactionFilter={currentTransactionFilter}
+                        type="bank"
+                        isMini={false}
+                      />
+                    ),
+                )}
               </div>
             </div>
           </div>
@@ -586,13 +638,16 @@ export const ImportSales = () => {
         </button>
       </div>
 
-      <Dialog open={isModalReconciliationDetailOpen} onOpenChange={handleModalOpenChange}>
+      <Dialog
+        open={isModalReconciliationDetailOpen}
+        onOpenChange={handleModalOpenChange}
+      >
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Транзакция</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
-            {(
+            {
               <div>
                 <div className="pt-3">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -600,24 +655,25 @@ export const ImportSales = () => {
                   </h4>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
                     {currentBankReconciliation?.bankTransaction?.meta &&
-                    typeof currentBankReconciliation.bankTransaction.meta === "object" ? (
-                      Object.entries(currentBankReconciliation.bankTransaction.meta).map(
-                        ([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between items-start"
-                          >
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                              {key}:
-                            </span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
-                              {typeof value === "object"
-                                ? JSON.stringify(value)
-                                : String(value)}
-                            </span>
-                          </div>
-                        ),
-                      )
+                    typeof currentBankReconciliation.bankTransaction.meta ===
+                      "object" ? (
+                      Object.entries(
+                        currentBankReconciliation.bankTransaction.meta,
+                      ).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between items-start"
+                        >
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {key}:
+                          </span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Нет доступных метаданных
@@ -631,24 +687,25 @@ export const ImportSales = () => {
                   </h4>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
                     {currentBankReconciliation?.crmTransaction?.meta &&
-                    typeof currentBankReconciliation.crmTransaction.meta === "object" ? (
-                      Object.entries(currentBankReconciliation.crmTransaction.meta).map(
-                        ([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between items-start"
-                          >
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                              {key}:
-                            </span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
-                              {typeof value === "object"
-                                ? JSON.stringify(value)
-                                : String(value)}
-                            </span>
-                          </div>
-                        ),
-                      )
+                    typeof currentBankReconciliation.crmTransaction.meta ===
+                      "object" ? (
+                      Object.entries(
+                        currentBankReconciliation.crmTransaction.meta,
+                      ).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between items-start"
+                        >
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {key}:
+                          </span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Нет доступных метаданных
@@ -657,48 +714,51 @@ export const ImportSales = () => {
                   </div>
                 </div>
               </div>
-            )}
+            }
           </div>
           <DialogFooter>
-            <div className="flex justify-between items-center w-full">
-              
-            </div>
+            <div className="flex justify-between items-center w-full"></div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isModalReconciliationsDetailOpen} onOpenChange={(open) => setIsModalReconciliationsDetailOpen(open)}>
+      <Dialog
+        open={isModalReconciliationsDetailOpen}
+        onOpenChange={(open) => setIsModalReconciliationsDetailOpen(open)}
+      >
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Транзакции</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
-            {(
+            {
               <div>
                 <div className="pt-3">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Банковские метаданные:
                   </h4>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                    {currentReconciliations.length && currentReconciliations[0].bankTransaction?.meta &&
-                    typeof currentReconciliations[0].bankTransaction.meta === "object" ? (
-                      Object.entries(currentReconciliations[0].bankTransaction.meta).map(
-                        ([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between items-start"
-                          >
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                              {key}:
-                            </span>
-                            <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
-                              {typeof value === "object"
-                                ? JSON.stringify(value)
-                                : String(value)}
-                            </span>
-                          </div>
-                        ),
-                      )
+                    {currentReconciliations.length &&
+                    currentReconciliations[0].bankTransaction?.meta &&
+                    typeof currentReconciliations[0].bankTransaction.meta ===
+                      "object" ? (
+                      Object.entries(
+                        currentReconciliations[0].bankTransaction.meta,
+                      ).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between items-start"
+                        >
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {key}:
+                          </span>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                            {typeof value === "object"
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      ))
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         Нет доступных метаданных
@@ -711,60 +771,66 @@ export const ImportSales = () => {
                     CRM метаданные:
                   </h4>
                   <div className="flex flex-col space-y-3">
-                    {currentReconciliations.length && currentReconciliations.map((r, idx) => (
-                      <div key={r.crmTransactionId}>
-                        {currentReconciliations.length > 1 && <span className="text-sm">{idx + 1}.</span>}
-                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                          {r?.crmTransaction?.meta &&
-                          typeof r.crmTransaction.meta === "object" ? (
-                            Object.entries(r.crmTransaction.meta).map(
-                              ([key, value]) => (
-                                <div
-                                  key={key}
-                                  className="flex justify-between items-start"
-                                >
-                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                    {key}:
-                                  </span>
-                                  <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
-                                    {typeof value === "object"
-                                      ? JSON.stringify(value)
-                                      : String(value)}
-                                  </span>
-                                </div>
-                              ),
-                            )
-                          ) : (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Нет доступных метаданных
-                            </p>
+                    {currentReconciliations.length &&
+                      currentReconciliations.map((r, idx) => (
+                        <div key={r.crmTransactionId}>
+                          {currentReconciliations.length > 1 && (
+                            <span className="text-sm">{idx + 1}.</span>
                           )}
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                            {r?.crmTransaction?.meta &&
+                            typeof r.crmTransaction.meta === "object" ? (
+                              Object.entries(r.crmTransaction.meta).map(
+                                ([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className="flex justify-between items-start"
+                                  >
+                                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                      {key}:
+                                    </span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                                      {typeof value === "object"
+                                        ? JSON.stringify(value)
+                                        : String(value)}
+                                    </span>
+                                  </div>
+                                ),
+                              )
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Нет доступных метаданных
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </div>
-            )}
+            }
           </div>
           <DialogFooter>
-            <div className="flex justify-between items-center w-full">
-              
-            </div>
+            <div className="flex justify-between items-center w-full"></div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isModalReconciliationCreateOpen} onOpenChange={handleModalReconciliationCreateChange}>
+      <Dialog
+        open={isModalReconciliationCreateOpen}
+        onOpenChange={handleModalReconciliationCreateChange}
+      >
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Транзакция</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
-            {(currentBankReconciliation?.bankTransaction) && (
+            {currentBankReconciliation?.bankTransaction && (
               <div className="pt-3">
                 <p className="text-lg font-bold">Банковская транзакция</p>
-                {formatBalance(currentBankReconciliation.bankTransaction.amount)}
+                {formatBalance(
+                  currentBankReconciliation.bankTransaction.amount,
+                )}
               </div>
             )}
 
@@ -792,11 +858,8 @@ export const ImportSales = () => {
             </div>
           </div>
           <DialogFooter>
-            <div className="flex flex-col w-full space-y-3">              
-              <Button 
-                size="sm"
-                onClick={handleCreateNewReconciliation}
-              >
+            <div className="flex flex-col w-full space-y-3">
+              <Button size="sm" onClick={handleCreateNewReconciliation}>
                 Сохранить
               </Button>
             </div>
@@ -804,16 +867,21 @@ export const ImportSales = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isModalReconcileCreateOpen} onOpenChange={handleModalReconcileCreateChange}>
+      <Dialog
+        open={isModalReconcileCreateOpen}
+        onOpenChange={handleModalReconcileCreateChange}
+      >
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Транзакция</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
-            {(currentBankReconciliation?.bankTransaction) && (
+            {currentBankReconciliation?.bankTransaction && (
               <div className="pt-3">
                 <p className="text-lg font-bold">Банковская транзакция</p>
-                {formatBalance(currentBankReconciliation.bankTransaction.amount)}
+                {formatBalance(
+                  currentBankReconciliation.bankTransaction.amount,
+                )}
               </div>
             )}
 
@@ -842,19 +910,15 @@ export const ImportSales = () => {
                     )}
                   />
                 </label>
-                <div className="flex flex-col w-full space-y-3">              
-                  <Button 
-                    size="sm"
-                    type="submit"
-                  >
+                <div className="flex flex-col w-full space-y-3">
+                  <Button size="sm" type="submit">
                     Сохранить
                   </Button>
                 </div>
               </div>
             </form>
           </div>
-          <DialogFooter>
-          </DialogFooter>
+          <DialogFooter></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

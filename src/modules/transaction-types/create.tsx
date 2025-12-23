@@ -21,6 +21,7 @@ import { z } from "zod";
 const formSchema = z.object({
   name: z.string({ message: "Обязательное поле" }),
   type: z.enum(["income", "expense"]),
+  comment: z.string().optional(),
 });
 
 export function TransactionTypeCreate() {
@@ -32,6 +33,7 @@ export function TransactionTypeCreate() {
     defaultValues: {
       name: "",
       type: "income",
+      comment: "",
     },
   });
 
@@ -51,6 +53,7 @@ export function TransactionTypeCreate() {
     createTransactionType({
       name: values.name,
       category: values.type,
+      comment: values.comment || undefined,
     });
   }
 
@@ -77,9 +80,14 @@ export function TransactionTypeCreate() {
                   name="type"
                   label="Тип"
                   options={[
-                    { label: "Доход", value: "income" },
-                    { label: "Расход", value: "expense" },
+                    { label: "Поступления", value: "income" },
+                    { label: "Выбытия", value: "expense" },
                   ]}
+                />
+                <InputField
+                  name="comment"
+                  label="Комментарий"
+                  placeholder="Опционально"
                 />
               </div>
 

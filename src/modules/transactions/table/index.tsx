@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent } from "react";
 import { TrashIcon, ArrowRightFromLineIcon } from "lucide-react";
 import {
   Table,
@@ -14,15 +14,14 @@ import { Button } from "@/shared/ui/button";
 import dayjs from "dayjs";
 import { api } from "@/shared/lib/trpc/client";
 import { LoaderIcon } from "@/shared/ui/loader";
-import { Transaction } from '@/modules/transactions/model/Transaction';
-import { api as axiosApi } from '@/shared/client'
-import { toast } from 'sonner';
-import { useUser } from '@clerk/clerk-react';
+import { Transaction } from "@/modules/transactions/model/Transaction";
+import { api as axiosApi } from "@/shared/client";
+import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
 import { CustomCheckbox } from "@/shared/ui/checkbox";
-import { RekassaStorage } from '@/shared/lib/storage';
-import { formatDateToCustomObject } from '../utils'
-import { Axios, AxiosError } from 'axios';
-
+import { RekassaStorage } from "@/shared/lib/storage";
+import { formatDateToCustomObject } from "../utils";
+import { Axios, AxiosError } from "axios";
 
 export function TransactionsTable() {
   const { user } = useUser();
@@ -30,27 +29,31 @@ export function TransactionsTable() {
   const [isLoading, setLoading] = useState(false);
   const [checkedTransactions, setCheckedTransactions] = useState<string[]>([]);
   const [amountOfTransactions, setAmountOfTransaction] = useState(0);
-  const { data: transactions } = api.crmTransaction.getAll.useQuery() as {data: Transaction[]};
+  const { data: transactions } = api.crmTransaction.getAll.useQuery() as {
+    data: Transaction[];
+  };
 
-  const { mutateAsync: deleteCrmTransaction } = api.crmTransaction.delete.useMutation({
-    onSuccess: () => {
-      toast("CRM транзакция удалена");
-      utils.crmTransaction.getAll.invalidate();
-    },
-    onError: () => {
-      toast("Не получилось удалить транзакцию");
-    }
-  })
+  const { mutateAsync: deleteCrmTransaction } =
+    api.crmTransaction.delete.useMutation({
+      onSuccess: () => {
+        toast("CRM транзакция удалена");
+        utils.crmTransaction.getAll.invalidate();
+      },
+      onError: () => {
+        toast("Не получилось удалить транзакцию");
+      },
+    });
 
-  const { mutateAsync: updateCrmTransaction } = api.crmTransaction.update.useMutation({
-    onSuccess: () => {
-      toast("CRM транзакция оплачена");
-      utils.crmTransaction.getAll.invalidate();
-    },
-    onError: () => {
-      toast("Не получилось оплатить транзакцию в ручную");
-    }
-  })
+  const { mutateAsync: updateCrmTransaction } =
+    api.crmTransaction.update.useMutation({
+      onSuccess: () => {
+        toast("CRM транзакция оплачена");
+        utils.crmTransaction.getAll.invalidate();
+      },
+      onError: () => {
+        toast("Не получилось оплатить транзакцию в ручную");
+      },
+    });
 
   if (!transactions || isLoading || !user) {
     return (
@@ -61,7 +64,7 @@ export function TransactionsTable() {
   }
 
   const formatBalance = (balanceInKopecks: number) => {
-    return (balanceInKopecks).toLocaleString("ru-RU", {
+    return balanceInKopecks.toLocaleString("ru-RU", {
       style: "currency",
       currency: "KZT",
       minimumFractionDigits: 2,
@@ -69,99 +72,99 @@ export function TransactionsTable() {
   };
 
   const deleteHandler = async (transaction: Transaction) => {
-    await deleteCrmTransaction({ id: transaction.id })
-  }
+    await deleteCrmTransaction({ id: transaction.id });
+  };
 
   const sendPaymentHalyk = async (transaction: Transaction) => {
     setLoading(true);
     try {
-      await axiosApi.post(
-        '/api/create-payment',
-        {
-          amount: transaction.amount,
-          organizationId: user.publicMetadata.organizationId,
-          transactionIds: [transaction.id],
-          type: 'halyk'
-        }
-      )
+      await axiosApi.post("/api/create-payment", {
+        amount: transaction.amount,
+        organizationId: user.publicMetadata.organizationId,
+        transactionIds: [transaction.id],
+        type: "halyk",
+      });
 
-      toast.success(`Транзакция (${transaction.amount}) отправилась на Halyk-терминал`);
+      toast.success(
+        `Транзакция (${transaction.amount}) отправилась на Halyk-терминал`,
+      );
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Произошла ошибка при отправке платежа");
     }
 
     setLoading(false);
-  }
+  };
 
   const sendPaymentKaspi = async (transaction: Transaction) => {
     setLoading(true);
     try {
-      await axiosApi.post(
-        '/api/create-payment',
-        {
-          amount: transaction.amount,
-          organizationId: user.publicMetadata.organizationId,
-          transactionIds: [transaction.id],
-          type: 'kaspi'
-        }
-      )
+      await axiosApi.post("/api/create-payment", {
+        amount: transaction.amount,
+        organizationId: user.publicMetadata.organizationId,
+        transactionIds: [transaction.id],
+        type: "kaspi",
+      });
 
-      toast.success(`Транзакция (${transaction.amount}) отправилась на Kaspi-терминал`);
+      toast.success(
+        `Транзакция (${transaction.amount}) отправилась на Kaspi-терминал`,
+      );
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Произошла ошибка при отправке платежа");
     }
 
     setLoading(false);
-  }
+  };
 
-  const handleOptionChange = (event: ChangeEvent<HTMLInputElement>, amount: string) => {
+  const handleOptionChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    amount: string,
+  ) => {
     const { name: id } = event.target;
     if (checkedTransactions.includes(id)) {
-      setCheckedTransactions(prev => prev.filter(tId => tId !== id))
-      setAmountOfTransaction(prev => prev - Number(amount))
-      return
+      setCheckedTransactions((prev) => prev.filter((tId) => tId !== id));
+      setAmountOfTransaction((prev) => prev - Number(amount));
+      return;
     }
 
-    setCheckedTransactions(prev => [...prev, id])
-    setAmountOfTransaction(prev => prev + Number(amount))
-  }
+    setCheckedTransactions((prev) => [...prev, id]);
+    setAmountOfTransaction((prev) => prev + Number(amount));
+  };
 
-  const handleCommonPayment = async (type: 'halyk' | 'kaspi') => {
+  const handleCommonPayment = async (type: "halyk" | "kaspi") => {
     setLoading(true);
     try {
-      await axiosApi.post(
-        '/api/create-payment',
-        {
-          amount: amountOfTransactions.toString(),
-          organizationId: user.publicMetadata.organizationId,
-          transactionIds: checkedTransactions,
-          type: type
-        }
-      )
+      await axiosApi.post("/api/create-payment", {
+        amount: amountOfTransactions.toString(),
+        organizationId: user.publicMetadata.organizationId,
+        transactionIds: checkedTransactions,
+        type: type,
+      });
 
-      toast.success(`Транзакции на сумму (${amountOfTransactions}) отправились на ${type}-терминал`);
+      toast.success(
+        `Транзакции на сумму (${amountOfTransactions}) отправились на ${type}-терминал`,
+      );
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Произошла ошибка при отправке платежа");
     }
 
     setLoading(false);
-  }
+  };
 
   const makeTransactionPayed = async (transaction: Transaction) => {
     setLoading(true);
     try {
       await updateCrmTransaction({
         transactionId: transaction.id,
-        bankTransactionId: `by-hand-${crypto.randomUUID()}`
-      })
+        bankTransactionId: `by-hand-${crypto.randomUUID()}`,
+      });
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
     setLoading(false);
-  }
+  };
 
   const sendToRekassa = async (transaction: Transaction) => {
     setLoading(true);
@@ -171,8 +174,10 @@ export function TransactionsTable() {
       const data = storage.getRekassaData();
 
       if (!data.id) {
-        toast.error('Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)')
-        return
+        toast.error(
+          "Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)",
+        );
+        return;
       }
 
       const now = new Date();
@@ -182,98 +187,108 @@ export function TransactionsTable() {
       await axiosApi.post(
         `${process.env.NEXT_PUBLIC_API_REKASSA}/api/crs/${data.id}/tickets`,
         {
-          "operation" : "OPERATION_SELL",
+          operation: "OPERATION_SELL",
           ...formattedDate,
-          "domain" : {
-            "type" : "DOMAIN_SERVICES"
+          domain: {
+            type: "DOMAIN_SERVICES",
           },
-          "items" : [ {
-            "type" : "ITEM_TYPE_COMMODITY",
-            "commodity" : {
-              "name" : "Позиция",
-              "sectionCode" : "1",
-              "quantity" : 1000,
-              "price" : {
-                "bills" : price,
-                "coins" : 0
+          items: [
+            {
+              type: "ITEM_TYPE_COMMODITY",
+              commodity: {
+                name: "Позиция",
+                sectionCode: "1",
+                quantity: 1000,
+                price: {
+                  bills: price,
+                  coins: 0,
+                },
+                sum: {
+                  bills: price,
+                  coins: 0,
+                },
+                auxiliary: [
+                  {
+                    key: "UNIT_TYPE",
+                    value: "PIECE",
+                  },
+                ],
               },
-              "sum" : {
-                "bills" : price,
-                "coins" : 0
+            },
+          ],
+          payments: [
+            {
+              type: "PAYMENT_CARD", // PAYMENT_CASH / PAYMENT_CARD
+              sum: {
+                bills: price,
+                coins: 0,
               },
-              "auxiliary" : [ {
-                "key" : "UNIT_TYPE",
-                "value" : "PIECE"
-              } ]
-            }
-          } ],
-          "payments" : [ {
-            "type" : "PAYMENT_CARD", // PAYMENT_CASH / PAYMENT_CARD
-            "sum" : {
-              "bills" : price,
-              "coins" : 0
-            }
-          } ],
-          "amounts" : {
-            "total" : {
-              "bills" : price,
-              "coins" : 0
             },
-            "taken" : {
-              "bills" : price,
-              "coins" : 0
+          ],
+          amounts: {
+            total: {
+              bills: price,
+              coins: 0,
             },
-            "change" : {
-              "bills" : "0",
-              "coins" : 0
-            }
-          }
+            taken: {
+              bills: price,
+              coins: 0,
+            },
+            change: {
+              bills: "0",
+              coins: 0,
+            },
+          },
         },
-        { headers: {
-          'Authorization': `Bearer ${data.token}`,
-          'X-Request-ID': crypto.randomUUID()
-        }}
-      )      
+        {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+            "X-Request-ID": crypto.randomUUID(),
+          },
+        },
+      );
     } catch (e) {
       if (e instanceof AxiosError) {
         if (e.status === 401) {
-          toast.error('Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)')
+          toast.error(
+            "Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)",
+          );
         } else {
-          toast.error(e.message)
+          toast.error(e.message);
         }
       } else {
-        toast.error(e as string)
+        toast.error(e as string);
       }
     }
 
     setLoading(false);
-  }
+  };
 
   return (
     <div className="flex flex-col gap-8 mb-12">
       <div className="flex justify-between flex gap-4">
         <div>
-          <h1 className='text-3xl'>Транзакции</h1>
+          <h1 className="text-3xl">Прием оплат</h1>
         </div>
         {checkedTransactions.length !== 0 && (
           <div>
             Сумма: {amountOfTransactions}
             <div className="flex justify-end gap-2">
-              <Button 
-                className="flex w-full px-1 bg-red-600 text-white" 
-                variant="default" 
-                size="icon" 
+              <Button
+                className="flex w-full px-1 bg-red-600 text-white"
+                variant="default"
+                size="icon"
                 asChild
-                onClick={() => handleCommonPayment('kaspi')}
+                onClick={() => handleCommonPayment("kaspi")}
               >
                 <div>Kaspi</div>
               </Button>
-              <Button 
-                className="flex w-full px-1 bg-green-600 text-white" 
-                variant="default" 
-                size="icon" 
+              <Button
+                className="flex w-full px-1 bg-green-600 text-white"
+                variant="default"
+                size="icon"
                 asChild
-                onClick={() => handleCommonPayment('halyk')}
+                onClick={() => handleCommonPayment("halyk")}
               >
                 <div>Halyk</div>
               </Button>
@@ -282,11 +297,7 @@ export function TransactionsTable() {
         )}
       </div>
 
-      {transactions.length === 0 && (
-        <div>
-          У вас нет активных транзакций
-        </div>
-      )}
+      {transactions.length === 0 && <div>У вас нет активных транзакций</div>}
 
       {transactions && transactions.length > 0 && (
         <Table>
@@ -302,47 +313,50 @@ export function TransactionsTable() {
           </TableHeader>
           <TableBody>
             {transactions.map((item) => (
-              <TableRow key={item.id} className={
-                item.bankTransactionId 
-                ? 'bg-[#1b6b23a0] text-white hover:bg-[#1b6b23a0]'
-                : ''
-              }>
+              <TableRow
+                key={item.id}
+                className={
+                  item.bankTransactionId
+                    ? "bg-[#1b6b23a0] text-white hover:bg-[#1b6b23a0]"
+                    : ""
+                }
+              >
                 <TableCell>
                   <CustomCheckbox
                     id={item.id}
                     name={item.id}
                     label=""
                     checked={checkedTransactions.includes(item.id)}
-                    onChange={e => handleOptionChange(e, item.amount)}
+                    onChange={(e) => handleOptionChange(e, item.amount)}
                   />
-                  {item.bankTransactionId ? 'Оплачено' : 'Не оплачено'}
+                  {item.bankTransactionId ? "Оплачено" : "Не оплачено"}
                 </TableCell>
                 <TableCell>
                   {dayjs(item.createdAt).format("DD.MM.YYYY, HH:mm")}
                 </TableCell>
                 <TableCell>{formatBalance(Number(item.amount))}</TableCell>
                 <TableCell>
-                  <div className='flex flex-col'>
-                    <p>{ `${item.meta.crm || ''} ${item.meta?.data?.expense?.title || ''}` }</p>
-                    <p>{ `${item.meta?.data?.account?.title || ''}` }</p>
+                  <div className="flex flex-col">
+                    <p>{`${item.meta.crm || ""} ${item.meta?.data?.expense?.title || ""}`}</p>
+                    <p>{`${item.meta?.data?.account?.title || ""}`}</p>
                   </div>
                 </TableCell>
                 <TableCell>
                   {!checkedTransactions.includes(item.id) && (
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        className="flex w-full px-1 bg-red-600 text-white" 
-                        variant="default" 
-                        size="icon" 
+                      <Button
+                        className="flex w-full px-1 bg-red-600 text-white"
+                        variant="default"
+                        size="icon"
                         asChild
                         onClick={() => sendPaymentKaspi(item)}
                       >
                         <div>Kaspi</div>
                       </Button>
-                      <Button 
-                        className="flex w-full px-1 bg-green-600 text-white" 
-                        variant="default" 
-                        size="icon" 
+                      <Button
+                        className="flex w-full px-1 bg-green-600 text-white"
+                        variant="default"
+                        size="icon"
                         asChild
                         onClick={() => sendPaymentHalyk(item)}
                       >
@@ -354,15 +368,23 @@ export function TransactionsTable() {
                 <TableCell>
                   {!item.bankTransactionId && (
                     <div className="flex">
-                      <button type='button' className='cursor-pointer' onClick={() => deleteHandler(item)}>
-                        <TrashIcon/>
+                      <button
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={() => deleteHandler(item)}
+                      >
+                        <TrashIcon />
                       </button>
                     </div>
                   )}
                   {item.bankTransactionId && (
                     <div className="flex">
-                      <button type='button' className='cursor-pointer' onClick={() => sendToRekassa(item)}>
-                        <ArrowRightFromLineIcon/>
+                      <button
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={() => sendToRekassa(item)}
+                      >
+                        <ArrowRightFromLineIcon />
                       </button>
                     </div>
                   )}

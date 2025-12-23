@@ -50,7 +50,7 @@ export function ReportsForm() {
       timelineStep = 4;
       break;
     case ReportStatus.done:
-      timelineStep = 5;
+      timelineStep = 4;
       break;
   }
 
@@ -96,7 +96,7 @@ export function ReportsForm() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem
+          {/* <AccordionItem
             variant="bordered"
             value={ReportStatus.expenses}
             disabled={timelineStep < 4}
@@ -105,12 +105,12 @@ export function ReportsForm() {
             <AccordionContent>
               <ImportExpenses />
             </AccordionContent>
-          </AccordionItem>
+          </AccordionItem> */}
 
           <AccordionItem
             variant="bordered"
             value={ReportStatus.done}
-            disabled={timelineStep < 5}
+            disabled={timelineStep < 4}
           >
             <AccordionTrigger>Итог</AccordionTrigger>
             <AccordionContent>

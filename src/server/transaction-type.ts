@@ -3,28 +3,27 @@ import { protectedProcedure } from "@/shared/lib/trpc/server";
 import { z } from "zod";
 
 export const transactionTypeRouter = createTRPCRouter({
-  getAll: protectedProcedure
-    .query(async ({ ctx, input }) => {
-      const transactionTypes = await ctx.prisma.transactionType.findMany({
-        include: {
-          organization: true,
-        },
-        where: {
-          OR: [
-            {
-              organizationId: null,
-            },
-            {
-              organizationId: ctx.organizationId || null,
-            },
-          ],
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-      return transactionTypes;
-    }),
+  getAll: protectedProcedure.query(async ({ ctx, input }) => {
+    const transactionTypes = await ctx.prisma.transactionType.findMany({
+      include: {
+        organization: true,
+      },
+      where: {
+        OR: [
+          {
+            organizationId: null,
+          },
+          {
+            organizationId: ctx.organizationId || null,
+          },
+        ],
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return transactionTypes;
+  }),
   getTransactionTypeByCategory: protectedProcedure
     .input(
       z.object({
@@ -55,13 +54,18 @@ export const transactionTypeRouter = createTRPCRouter({
     }),
   create: protectedProcedure
     .input(
-      z.object({ name: z.string(), category: z.enum(["income", "expense"]) }),
+      z.object({
+        name: z.string(),
+        category: z.enum(["income", "expense"]),
+        comment: z.string().optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const transactionType = await ctx.prisma.transactionType.create({
         data: {
           name: input.name,
           category: input.category,
+          ...(input.comment && { comment: input.comment }),
           organizationId: ctx.organizationId,
         },
       });

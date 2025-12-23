@@ -150,8 +150,9 @@ model Reconciliation {
 }
 
 model TransactionType {
-  id   String @id @default(uuid()) @map("id")
-  name String
+  id      String  @id @default(uuid()) @map("id")
+  name    String
+  comment String? @map("comment")
 
   category TransactionCategory @default(income) @map("category")
 
