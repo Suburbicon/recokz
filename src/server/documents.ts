@@ -88,9 +88,9 @@ export const documentsRouter = createTRPCRouter({
         const startRow = await ai.detectTableStartRow(previewRows);
 
         const headerRow = rows[startRow];
-        
+
         const columnsMap = await ai.detectTableColumns(headerRow);
-        
+
         const data = rows.reduce<
           {
             date: string;
@@ -117,64 +117,69 @@ export const documentsRouter = createTRPCRouter({
           const parsedDate = parseDateTime(
             row[columnsMap.date],
             row[columnsMap.time],
-            'Asia/Almaty'
+            "Asia/Almaty",
           );
 
           if (!parsedDate) return acc;
 
-          if (!areSameDate(parsedDate, dayjs(date).tz('Asia/Almaty'))) {
+          if (!areSameDate(parsedDate, dayjs(date).tz("Asia/Almaty"))) {
             return acc;
           }
 
-          const byCash = row.join(', ').includes('Наличными');
+          const byCash = row.join(", ").includes("Наличными");
 
           acc.push({
             date: parsedDate.toISOString(),
             amount,
-            meta: {...row.reduce(
-              (meta, item, i) => {
-                if (i === columnsMap.date) {
-                  meta[headerRow[i]] = parsedDate.toISOString();
-                } else if (i === columnsMap.time) {
-                  meta[headerRow[i]] = parsedDate.format("HH:mm:ss");
-                } else if (i === columnsMap.amount) {
-                  meta[headerRow[i]] = amount;
-                } else {
-                  meta[headerRow[i] || "Неопределенное поле"] = item;
-                }
-                return meta;
-              },
-              {} as Record<string, string | number>,
-            ),
-            'byCash': byCash,
+            meta: {
+              ...row.reduce(
+                (meta, item, i) => {
+                  if (i === columnsMap.date) {
+                    meta[headerRow[i]] = parsedDate.toISOString();
+                  } else if (i === columnsMap.time) {
+                    meta[headerRow[i]] = parsedDate.format("HH:mm:ss");
+                  } else if (i === columnsMap.amount) {
+                    meta[headerRow[i]] = amount;
+                  } else {
+                    meta[headerRow[i] || "Неопределенное поле"] = item;
+                  }
+                  return meta;
+                },
+                {} as Record<string, string | number>,
+              ),
+              byCash: byCash,
             },
-            transactionId: (row[columnsMap.transactionId] || 0).toString()
+            transactionId: (row[columnsMap.transactionId] || 0).toString(),
           });
 
-          if (input.bankName !== 'CRM') {
-            acc[acc.length - 1].meta.bank = input.bankName
+          if (input.bankName !== "CRM") {
+            acc[acc.length - 1].meta.bank = input.bankName;
           }
 
-          if (input.bankName === 'Halyk') {
-            if (acc[acc.length - 1].meta['Комиссия за транзакции']) {
+          if (input.bankName === "Halyk") {
+            if (acc[acc.length - 1].meta["Комиссия за транзакции"]) {
               acc.push({
                 date: parsedDate.toISOString(),
-                amount: Number(acc[acc.length - 1].meta['Комиссия за транзакции']),
+                amount: Number(
+                  acc[acc.length - 1].meta["Комиссия за транзакции"],
+                ),
                 meta: acc[acc.length - 1].meta,
-                transactionId: (row[columnsMap.transactionId] || 0).toString()
-              })
+                transactionId: (row[columnsMap.transactionId] || 0).toString(),
+              });
             }
           }
 
-          if (input.bankName === 'CRM') {
-            switch(acc[acc.length - 1].meta['Payment source']) {
-              case 'Халык банк':
-                acc[acc.length - 1].meta.bank = 'Halyk'
-                break;
-              case 'Каспи':
-                acc[acc.length - 1].meta.bank = 'Kaspi'
-                break;
-            }
+          if (input.bankName === "CRM") {
+            Object.values(acc[acc.length - 1].meta).forEach((el) => {
+              switch (el) {
+                case "Халык банк":
+                  acc[acc.length - 1].meta.bank = "Halyk";
+                  break;
+                case "Каспи":
+                  acc[acc.length - 1].meta.bank = "Kaspi";
+                  break;
+              }
+            });
           }
           return acc;
         }, []);
@@ -191,7 +196,7 @@ export const documentsRouter = createTRPCRouter({
             name: input.fileName,
             balance: totalBalance,
             link: `uploads/${input.reportId}/${input.fileName}`, // Could be updated to actual file storage path
-            type: input.bankName !== 'CRM' ? "bank" : "crm",
+            type: input.bankName !== "CRM" ? "bank" : "crm",
             bankName: input.bankName,
             reportId: input.reportId,
           },
@@ -208,7 +213,7 @@ export const documentsRouter = createTRPCRouter({
             meta: transaction.meta, // Prisma will automatically handle JSON serialization
             documentId: document.id,
             transactionId: transaction.transactionId,
-            organizationId: ctx.organizationId
+            organizationId: ctx.organizationId,
           };
         });
 
@@ -225,7 +230,8 @@ export const documentsRouter = createTRPCRouter({
           mimeType: input.mimeType,
           bufferSize: fileBuffer.length,
           documentId: document.id,
-          documentType: input.bankName !== 'CRM' ? DocumentType.bank : DocumentType.crm,
+          documentType:
+            input.bankName !== "CRM" ? DocumentType.bank : DocumentType.crm,
           transactionsCount: batchResult.count,
           totalBalance: totalBalance,
           data: data.map((transaction) => ({
