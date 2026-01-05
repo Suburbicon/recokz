@@ -30,14 +30,57 @@ const DEFAULT_EXPENSE_TYPES = [
 
 export const organizationRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(z.object({ name: z.string() }))
+    .input(
+      z.object({
+        fullName: z.string(),
+        position: z.string().optional(),
+        companyName: z.string(),
+        bin: z.string().optional(),
+        email: z.string().email(),
+        phone: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      const organization = await ctx.prisma.organization.create({
-        data: {
-          name: input.name,
+      // Создаем или обновляем пользователя
+      const user = await ctx.prisma.user.upsert({
+        where: {
+          clerkUserId: ctx.userId,
+        },
+        create: {
+          fullName: input.fullName,
+          position: input.position,
+          companyName: input.companyName,
+          bin: input.bin,
+          email: input.email,
+          phone: input.phone,
+          clerkUserId: ctx.userId,
+        },
+        update: {
+          fullName: input.fullName,
+          position: input.position,
+          companyName: input.companyName,
+          bin: input.bin,
+          email: input.email,
+          phone: input.phone,
         },
       });
 
+      // Создаем организацию
+      const organization = await ctx.prisma.organization.create({
+        data: {
+          name: input.companyName,
+        },
+      });
+
+      // Связываем пользователя с организацией
+      await ctx.prisma.userOrganization.create({
+        data: {
+          userId: user.id,
+          organizationId: organization.id,
+        },
+      });
+
+      // Создаем дефолтные типы транзакций
       const defaultTransactionTypes = [
         ...DEFAULT_INCOME_TYPES.map((name) => ({
           name,
@@ -55,11 +98,13 @@ export const organizationRouter = createTRPCRouter({
         data: defaultTransactionTypes,
       });
 
+      // Обновляем metadata в Clerk
       await ctx.clerk.users.updateUserMetadata(ctx.userId, {
         publicMetadata: {
           organizationId: organization.id,
         },
       });
+
       return organization;
     }),
 

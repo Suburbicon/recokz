@@ -8,6 +8,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String   @id @default(uuid()) @map("id")
+  fullName    String   @map("full_name")
+  position    String?  @map("position")
+  companyName String   @map("company_name")
+  bin         String?  @map("bin")
+  email       String   @map("email")
+  phone       String   @map("phone")
+  clerkUserId String   @unique @map("clerk_user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  organizations UserOrganization[]
+
+  @@map("users")
+}
+
 model Organization {
   id               String            @id @default(uuid()) @map("id")
   name             String
@@ -17,8 +34,22 @@ model Organization {
   transactions     Transaction[]
   crmTransactions  CrmTransaction[]
   bankTransactions BankTransaction[]
+  users            UserOrganization[]
 
   @@map("organizations")
+}
+
+model UserOrganization {
+  id             String       @id @default(uuid()) @map("id")
+  userId         String       @map("user_id")
+  organizationId String       @map("organization_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("user_organizations")
 }
 
 model Report {

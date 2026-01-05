@@ -11,7 +11,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/shared/ui/sidebar";
-import { BookOpenIcon, FileTextIcon, ArrowLeftRightIcon, ChevronsLeftRightEllipsisIcon } from "lucide-react";
+import {
+  BookOpenIcon,
+  FileTextIcon,
+  ArrowLeftRightIcon,
+  ChevronsLeftRightEllipsisIcon,
+  UserIcon,
+} from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -53,9 +59,33 @@ export function ReportsSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
+                  <Link href="/cabinet/profile">
+                    <UserIcon />
+                    <span>Профиль</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
                   <Link href="/cabinet">
                     <FileTextIcon />
-                    <span>Отчеты</span>
+                    <span>Сверка</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/cabinet/transactions">
+                    <ArrowLeftRightIcon />
+                    <span>Приём оплат</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/cabinet/connection">
+                    <ChevronsLeftRightEllipsisIcon />
+                    <span>Интеграции</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -64,22 +94,6 @@ export function ReportsSidebar() {
                   <Link href="/cabinet/dictionary">
                     <BookOpenIcon />
                     <span>Справочники</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/cabinet/transactions">
-                    <ArrowLeftRightIcon />
-                    <span>Транзакции</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/cabinet/connection">
-                    <ChevronsLeftRightEllipsisIcon />
-                    <span>Rekassa</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

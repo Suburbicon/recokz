@@ -21,7 +21,7 @@ export function Footer() {
             </div>
 
             <div className="flex gap-4">
-              <a href="#" target="_blank" className="p-1">
+              {/* <a href="#" target="_blank" className="p-1">
                 <LinkedinIcon />
               </a>
               <a href="#" target="_blank" className="p-1">
@@ -32,26 +32,39 @@ export function Footer() {
               </a>
               <a href="#" target="_blank" className="p-1">
                 <TelegramIcon />
-              </a>
+              </a> */}
             </div>
           </div>
 
-          <div className="lg:col-span-3 col-span-1 flex lg:flex-row flex-col lg:gap-0 gap-9">
+          <div className="lg:col-span-3 col-span-1 flex lg:flex-row flex-col lg:gap-0 gap-12">
             <div className="flex-1 space-y-4">
-              <Typography size="body-16">Компания</Typography>
+              {/* <Typography size="body-16">Компания</Typography>
               <Typography size="body-16" color="gray-200">
                 Преимущества
               </Typography>
-              {/* <Typography size="body-16" color="gray-200">
+              <Typography size="body-16" color="gray-200">
                 Отзывы
-              </Typography> */}
+              </Typography>
               <Typography size="body-16" color="gray-200">
                 Тарифы
-              </Typography>
+              </Typography> */}
             </div>
             <div className="flex-1 space-y-4">
               <Typography size="body-16">Для бизнеса</Typography>
-              <Typography size="body-16" color="gray-200">
+              <a
+                href="/documents/Privacy-Policy.pdf"
+                download="Privacy-Policy.pdf"
+                className="block"
+              >
+                <Typography
+                  size="body-16"
+                  color="gray-200"
+                  className="hover:underline cursor-pointer"
+                >
+                  Политика конфиденциальности
+                </Typography>
+              </a>
+              {/* <Typography size="body-16" color="gray-200">
                 Пользовательское соглашение
               </Typography>
               <Typography size="body-16" color="gray-200">
@@ -59,18 +72,19 @@ export function Footer() {
               </Typography>
               <Typography size="body-16" color="gray-200">
                 Расчеты стоимости услуг
-              </Typography>
+              </Typography> */}
             </div>
             <div className="flex-1 space-y-4">
               <Typography size="body-16">Контакты</Typography>
               <Typography size="body-16" color="gray-200">
-                +7 (777) 777 77 77
+                +7 (701) 532 17 04
               </Typography>
               <Typography size="body-16" color="gray-200">
                 support@reco.kz
               </Typography>
               <Typography size="body-16" color="gray-200">
-                Адрес компании
+                Адрес компании: Алматы, САДОВОДЧЕСКОЕ ТОВАРИЩЕСТВО ДРУЖБА-СПОРТ,
+                дом 64
               </Typography>
             </div>
           </div>
@@ -78,16 +92,13 @@ export function Footer() {
 
         <div className="border-t border-gray-300 py-11 flex lg:flex-row flex-col lg:gap-0 gap-8 justify-between items-center">
           <Typography size="body-14" color="gray-300">
-            Все права защищены, 2010-{new Date().getFullYear()}. AO “Reco.kz”
+            Все права защищены, {new Date().getFullYear()}. TOO “Reco.kz”
           </Typography>
 
           <div className="flex lg:flex-row flex-col items-center lg:gap-10 gap-4">
-            <Typography size="body-16" color="gray-200">
+            {/* <Typography size="body-16" color="gray-200">
               Правила пользования сайтом
-            </Typography>
-            <Typography size="body-16" color="gray-200">
-              Политика конфиденциальности
-            </Typography>
+            </Typography> */}
           </div>
 
           <a
