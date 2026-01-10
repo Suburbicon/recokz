@@ -12,7 +12,7 @@ export function DeleteTransactionTypeButton({ id }: Props) {
 
   const { mutate } = api.transactionType.delete.useMutation({
     onSuccess: () => {
-      toast.success("Тип транзакции успешно удален");
+      toast.success("Классификация транзакции успешно удалена");
       utils.transactionType.getAll.invalidate();
     },
     onError: (error) => {

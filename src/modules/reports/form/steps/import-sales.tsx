@@ -514,18 +514,28 @@ export const ImportSales = () => {
           )}
           <div className="flex space-x-3">
             <div className="flex items-center space-x-1">
-              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
               <div>
                 <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                   Оборот банка
                 </p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                  {formatBalance(bankTurnover)}
-                </p>
+                <div>
+                  {report.documents
+                    .filter((d) => d.type === "bank")
+                    .map((d) => (
+                      <p
+                        key={d.id}
+                        className="text-xs font-bold text-green-700 dark:text-green-300"
+                      >
+                        {d.name}:{" "}
+                        <span className="text-red-700">
+                          {formatBalance(d.balance * 100)}
+                        </span>
+                      </p>
+                    ))}
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-1">
-              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
               <div>
                 <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                   Оборот CRM
@@ -535,8 +545,7 @@ export const ImportSales = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <DollarSign className="w-8 h-8 text-green-600 dark:text-green-400" />
+            {/* <div className="flex items-center space-x-1">
               <div>
                 <p className="text-sm text-green-600 dark:text-green-400 font-medium">
                   Не сверено
@@ -545,7 +554,7 @@ export const ImportSales = () => {
                   Сделать
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

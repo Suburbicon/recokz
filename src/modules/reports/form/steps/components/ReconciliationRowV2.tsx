@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from "react";
 import { CheckCircle, XCircle, DollarSign } from "lucide-react";
 import { Prisma, Transaction } from "@prisma/client";
 import {
@@ -10,8 +10,7 @@ import {
 } from "@/shared/ui/select";
 import { Button } from "@/shared/ui/button";
 import { CustomCheckbox } from "@/shared/ui/checkbox";
-import { TransactionType } from '../import-sales';
-
+import { TransactionType } from "../import-sales";
 
 const reconciliationWithRelations = {
   include: {
@@ -26,295 +25,322 @@ type ReconciliationWithRelations = Prisma.ReconciliationGetPayload<
 >;
 
 export const ReconciliationRowV2 = ({
-    reconciliations,
-    transactionTypes,
-    updateReconciliation,
-    isUpdatingReconciliation,
-    handleViewReconciliations,
-    handleReconciliationCreate,
-    handleCreateReconcile,
-    pickedCrmTransactions,
-    handlePickCrmTransactions,
-    type,
-    isMini,
-    notReconciliatedCrmTransactions,
-    currentTransactionFilter
-} : {
-    reconciliations: ReconciliationWithRelations[],
-    transactionTypes: any,
-    updateReconciliation: any,
-    isUpdatingReconciliation: boolean,
-    handleViewReconciliations: any,
-    handleReconciliationCreate: any,
-    handleCreateReconcile: any,
-    pickedCrmTransactions?: any,
-    handlePickCrmTransactions?: any,
-    type: 'bank' | 'crm',
-    isMini: boolean,
-    notReconciliatedCrmTransactions: ReconciliationWithRelations[],
-    currentTransactionFilter: TransactionType
+  reconciliations,
+  transactionTypes,
+  updateReconciliation,
+  isUpdatingReconciliation,
+  handleViewReconciliations,
+  handleReconciliationCreate,
+  handleCreateReconcile,
+  pickedCrmTransactions,
+  handlePickCrmTransactions,
+  type,
+  isMini,
+  notReconciliatedCrmTransactions,
+  currentTransactionFilter,
+}: {
+  reconciliations: ReconciliationWithRelations[];
+  transactionTypes: any;
+  updateReconciliation: any;
+  isUpdatingReconciliation: boolean;
+  handleViewReconciliations: any;
+  handleReconciliationCreate: any;
+  handleCreateReconcile: any;
+  pickedCrmTransactions?: any;
+  handlePickCrmTransactions?: any;
+  type: "bank" | "crm";
+  isMini: boolean;
+  notReconciliatedCrmTransactions: ReconciliationWithRelations[];
+  currentTransactionFilter: TransactionType;
 }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
-    const formatBalance = (balanceInKopecks: number) => {
-        return (balanceInKopecks / 100).toLocaleString("ru-RU", {
-            style: "currency",
-            currency: "KZT",
-            minimumFractionDigits: 2,
-        });
-    };
+  const [isExpanded, setIsExpanded] = useState(true);
+  const formatBalance = (balanceInKopecks: number) => {
+    return (balanceInKopecks / 100).toLocaleString("ru-RU", {
+      style: "currency",
+      currency: "KZT",
+      minimumFractionDigits: 2,
+    });
+  };
 
-    const isMatched = (reconciliations: ReconciliationWithRelations[]) => {
-        return reconciliations.every(r => r.bankTransaction && r.crmTransaction);
-    };
+  const isMatched = (reconciliations: ReconciliationWithRelations[]) => {
+    return reconciliations.every((r) => r.bankTransaction && r.crmTransaction);
+  };
 
-    const isResolved = (reconciliations: ReconciliationWithRelations[]) => {
-        // Consider resolved if it's either fully matched OR has a transaction type assigned
-        return isMatched(reconciliations) || !!reconciliations[0].typeId;
-    };
+  const isResolved = (reconciliations: ReconciliationWithRelations[]) => {
+    return isMatched(reconciliations) || !!reconciliations[0].typeId;
+  };
 
-    const handleTypeChange = async (reconciliationId: string, typeId: string) => {
-        try {
-            await updateReconciliation({
-                id: reconciliationId,
-                typeId: typeId,
-            });
-        } catch (error) {
-            console.error("Failed to update reconciliation type:", error);
-        }
-    };
+  const handleTypeChange = async (reconciliationId: string, typeId: string) => {
+    try {
+      await updateReconciliation({
+        id: reconciliationId,
+        typeId: typeId,
+      });
+    } catch (error) {
+      console.error("Failed to update reconciliation type:", error);
+    }
+  };
 
-    const getIconAndBgColor = (reconciliations: ReconciliationWithRelations[]) => {
-        if (isResolved(reconciliations)) {
-            return {
-                bg: "bg-green-100 dark:bg-green-900/30",
-                icon: (
-                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                ),
-            };
-        } else {
-            return {
-                bg: "bg-yellow-100 dark:bg-yellow-900/30",
-                icon: (
-                <XCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                ),
-            };
-        }
-    };
+  const getIconAndBgColor = (
+    reconciliations: ReconciliationWithRelations[],
+  ) => {
+    if (isResolved(reconciliations)) {
+      return {
+        bg: "bg-green-100 dark:bg-green-900/30",
+        icon: (
+          <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+        ),
+      };
+    } else {
+      return {
+        bg: "bg-yellow-100 dark:bg-yellow-900/30",
+        icon: (
+          <XCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+        ),
+      };
+    }
+  };
 
-    const getStatusText = (reconciliations: ReconciliationWithRelations[]) => {
-        if (isMatched(reconciliations)) {
-        return "Сверено";
-        } else if (reconciliations[0].typeId) {
-        return "Сверено";
-        } else {
-        return "Не сверено";
-        }
-    };
+  const getStatusText = (reconciliations: ReconciliationWithRelations[]) => {
+    if (isMatched(reconciliations)) {
+      return "Сверено";
+    } else if (reconciliations[0].typeId) {
+      return "Сверено";
+    } else {
+      return "Не сверено";
+    }
+  };
 
-    const getStatusColor = (reconciliations: ReconciliationWithRelations[]) => {
-        if (isResolved(reconciliations)) {
-        return "text-green-600 dark:text-green-400";
-        } else {
-        return "text-yellow-600 dark:text-yellow-400";
-        }
-    };
+  const getStatusColor = (reconciliations: ReconciliationWithRelations[]) => {
+    if (isResolved(reconciliations)) {
+      return "text-green-600 dark:text-green-400";
+    } else {
+      return "text-yellow-600 dark:text-yellow-400";
+    }
+  };
 
-    const getTransactionAmount = (reconciliations: ReconciliationWithRelations[], typeReconciliation: 'bank' | 'crm') => {
-        // Prefer bank transaction amount, fallback to CRM transaction amount
-        if (typeReconciliation === 'bank') {
-            if (
-                reconciliations[0].bankTransaction
-            ) {
-                return reconciliations[0].bankTransaction.amount;
-            }
-            return 0;
-        }
-        
-        return reconciliations.reduce((acc, val) => {
-            if (val.crmTransaction) {
-                acc += val.crmTransaction.amount
-            }
-            return acc
-        }, 0);
-    };
+  const getTransactionAmount = (
+    reconciliations: ReconciliationWithRelations[],
+    typeReconciliation: "bank" | "crm",
+  ) => {
+    // Prefer bank transaction amount, fallback to CRM transaction amount
+    if (typeReconciliation === "bank") {
+      if (reconciliations[0].bankTransaction) {
+        return reconciliations[0].bankTransaction.amount;
+      }
+      return 0;
+    }
 
-    const formatDate = (date: string | Date) => {
-        return new Date(date).toLocaleString("ru-RU", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        });
-    };
+    return reconciliations.reduce((acc, val) => {
+      if (val.crmTransaction) {
+        acc += val.crmTransaction.amount;
+      }
+      return acc;
+    }, 0);
+  };
 
-    const getSourceAndType = (reconciliations: any) => {
-        const source =
-        reconciliations.every((r: any) => r.bankTransaction && r.crmTransaction)
-            ? "Банк + CRM"
-            : reconciliations[0].bankTransaction
-            ? reconciliations[0].bankTransaction.document.name
-            : "CRM";
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleString("ru-RU", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
-        const typeName = getTransactionTypeName(reconciliations[0].typeId);
+  const getSourceAndType = (reconciliations: any) => {
+    const source = reconciliations.every(
+      (r: any) => r.bankTransaction && r.crmTransaction,
+    )
+      ? "Банк + CRM"
+      : reconciliations[0].bankTransaction
+        ? reconciliations[0].bankTransaction.document.name
+        : "CRM";
 
-        if (typeName) {
-        return `${source} • ${typeName}`;
-        }
+    const typeName = getTransactionTypeName(reconciliations[0].typeId);
 
-        return source;
-    };
+    if (typeName) {
+      return `${source} • ${typeName}`;
+    }
 
-    const getTransactionTypeName = (typeId: string | null) => {
-        if (!typeId || !transactionTypes) return null;
-        const type = transactionTypes.find((t: any) => t.id === typeId);
-        return type?.name || null;
-    };
+    return source;
+  };
 
-    const getTransactionDate = (reconciliation: any) => {
-        // Prefer bank transaction date, fallback to CRM transaction date
-        if (reconciliation.bankTransaction) {
-            return reconciliation.bankTransaction.date;
-        }
-        if (reconciliation.crmTransaction) {
-            return reconciliation.crmTransaction.date;
-        }
-        return new Date();
-    };
-  
+  const getTransactionTypeName = (typeId: string | null) => {
+    if (!typeId || !transactionTypes) return null;
+    const type = transactionTypes.find((t: any) => t.id === typeId);
+    return type?.name || null;
+  };
+
+  const getTransactionDate = (reconciliation: any) => {
+    // Prefer bank transaction date, fallback to CRM transaction date
+    if (reconciliation.bankTransaction) {
+      return reconciliation.bankTransaction.date;
+    }
+    if (reconciliation.crmTransaction) {
+      return reconciliation.crmTransaction.date;
+    }
+    return new Date();
+  };
+
+  const isCashTransaction = useMemo(() => {
     return (
-        <div
-            className="flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-        >
-            <div className="flex items-center justify-between w-full">
-                {reconciliations.some(r => r.bankTransactionId) ? (
-                    <div className="flex flex-col justify-between p-2 bg-gray-600 rounded-xl space-y-2 text-base">
-                        {(isResolved(reconciliations) && currentTransactionFilter !== 'CRM') && (
-                            <div className="flex-shrink-0">
-                                <Select
-                                    value={reconciliations[0].typeId || ""}
-                                    onValueChange={(value) =>
-                                        reconciliations.forEach(r => {
-                                            handleTypeChange(r.id, value)
-                                        })
-                                    }
-                                    disabled={isUpdatingReconciliation}
-                                >
-                                    <SelectTrigger className="w-32 h-7 text-xs">
-                                        <SelectValue placeholder="Тип" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {transactionTypes?.map((type: any) => (
-                                        <SelectItem key={type.id} value={type.id}>
-                                            {type.name}
-                                        </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between space-x-4">
-                            <div className="flex flex-col">
-                                <span className="text-sm">
-                                    {formatDate(getTransactionDate(reconciliations[0]))}
-                                </span>
-                                <span className="font-bold">
-                                    {formatBalance(
-                                        getTransactionAmount(reconciliations, 'bank'),
-                                    )}
-                                </span>
-                                <span>
-                                    
-                                </span>
-                            </div>
-                            <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
-                                Детали
-                            </Button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-between w-[25%] p-2 bg-gray-600 rounded-xl space-x-4 text-base">
-                    </div>
-                )}
-                <div className="flex flex-col items-center justify-center">
-                    <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            getIconAndBgColor(reconciliations).bg
-                        }`}
-                    >
-                        {getIconAndBgColor(reconciliations).icon}
-                    </div>
-                    <div className="flex flex-col items-center text-xs">
-                        <p
-                            className={`font-medium ${getStatusColor(reconciliations)}`}
-                        >
-                            {getStatusText(reconciliations)}
-                        </p>
-                        <p className="text-gray-500 dark:text-gray-400">
-                            {getSourceAndType(reconciliations)}
-                        </p>
-                    </div>
-                </div>
-                <div>
-                    {reconciliations.some(r => !r.crmTransactionId) ? (
-                        <div className="flex flex justify-between p-2 bg-gray-600 rounded-xl text-base space-x-4">
-                            <Button size="sm" onClick={() => handleReconciliationCreate(reconciliations[0])}>
-                                Сверить
-                            </Button>
-                            <Button size="sm" onClick={() => handleCreateReconcile(reconciliations[0])}>
-                                Создать
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col space-y-2 p-2 bg-gray-600 rounded-xl text-base">
-                            {(currentTransactionFilter !== 'CRM' && (reconciliations[0].crmTransaction?.meta && typeof reconciliations[0].crmTransaction?.meta === 'object' && 'byCash' in reconciliations[0].crmTransaction?.meta && reconciliations[0].crmTransaction?.meta?.byCash)) && (
-                                <div className="flex-shrink-0">
-                                    <Select
-                                        value={reconciliations[0].typeId || ""}
-                                        onValueChange={(value) =>
-                                            handleTypeChange(reconciliations[0].id, value)
-                                        }
-                                        disabled={isUpdatingReconciliation}
-                                    >
-                                        <SelectTrigger className="w-32 h-7 text-xs">
-                                            <SelectValue placeholder="Тип" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {transactionTypes?.map((type: any) => (
-                                            <SelectItem key={type.id} value={type.id}>
-                                                {type.name}
-                                            </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-                            <div className="flex flex-col">
-                                <div className="flex items-center justify-between space-x-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm">
-                                            {formatDate(getTransactionDate(reconciliations[0]))}
-                                        </span>
-                                        <span className="font-bold">
-                                            {formatBalance(
-                                                getTransactionAmount(reconciliations, 'crm'),
-                                            )}
-                                        </span>
-                                    </div>
-                                    <Button size="sm" onClick={() => handleViewReconciliations(reconciliations)}>
-                                        Детали
-                                    </Button>
-                                </div>
-                                {reconciliations.length > 1 && 
-                                    <span className="mt-2">
-                                        {`Состоит из ${reconciliations.length} транзакций CRM`}
-                                    </span>
-                                }
-                            </div>
-                        </div>
+      reconciliations[0].crmTransaction?.meta &&
+      typeof reconciliations[0].crmTransaction?.meta === "object" &&
+      "byCash" in reconciliations[0].crmTransaction?.meta &&
+      reconciliations[0].crmTransaction?.meta?.byCash
+    );
+  }, [reconciliations]);
+
+  return (
+    <div className="flex items-center justify-between py-3 px-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+      <div className="flex items-center justify-between w-full">
+        {reconciliations.some((r) => r.bankTransactionId) ? (
+          <div className="flex flex-col justify-between p-2 bg-gray-600 rounded-xl space-y-2 text-base">
+            <div className="flex items-center justify-between space-x-4">
+              <div className="flex flex-col">
+                <span className="text-sm">
+                  {formatDate(getTransactionDate(reconciliations[0]))}
+                </span>
+                <span className="font-bold">
+                  {formatBalance(getTransactionAmount(reconciliations, "bank"))}
+                </span>
+                <span></span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => handleViewReconciliations(reconciliations)}
+              >
+                Детали
+              </Button>
+            </div>
+          </div>
+        ) : isCashTransaction && isResolved(reconciliations) ? (
+          <div className="flex flex-col justify-between p-2 bg-gray-600 rounded-xl space-y-2 text-base">
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex flex-col">
+                  <span className="text-sm">
+                    {formatDate(getTransactionDate(reconciliations[0]))}
+                  </span>
+                  <span className="font-bold">
+                    {formatBalance(
+                      getTransactionAmount(reconciliations, "crm"),
                     )}
+                  </span>
                 </div>
-                {/* <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <Button
+                  size="sm"
+                  onClick={() => handleViewReconciliations(reconciliations)}
+                >
+                  Детали
+                </Button>
+              </div>
+              {reconciliations.length > 1 && (
+                <span className="mt-2">
+                  {`Состоит из ${reconciliations.length} транзакций CRM`}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between w-[25%] p-2 rounded-xl space-x-4 text-base"></div>
+        )}
+        <div className="flex flex-col items-center justify-center">
+          <div
+            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              getIconAndBgColor(reconciliations).bg
+            }`}
+          >
+            {getIconAndBgColor(reconciliations).icon}
+          </div>
+          <div className="flex flex-col items-center text-xs">
+            <p className={`font-medium ${getStatusColor(reconciliations)}`}>
+              {getStatusText(reconciliations)}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400">
+              {getSourceAndType(reconciliations)}
+            </p>
+          </div>
+        </div>
+        <div>
+          {reconciliations.some((r) => !r.crmTransactionId) ? (
+            <div className="flex flex justify-between p-2 bg-gray-600 rounded-xl text-base space-x-4">
+              <Button
+                size="sm"
+                onClick={() => handleReconciliationCreate(reconciliations[0])}
+              >
+                Сверить
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleCreateReconcile(reconciliations[0])}
+              >
+                Создать
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col space-y-2 p-2 bg-gray-600 rounded-xl text-base">
+              {
+                <div className="flex-shrink-0">
+                  <Select
+                    value={reconciliations[0].typeId || ""}
+                    onValueChange={(value) =>
+                      reconciliations.forEach((r) => {
+                        handleTypeChange(r.id, value);
+                      })
+                    }
+                    disabled={isUpdatingReconciliation}
+                  >
+                    <SelectTrigger className="w-36 h-7 text-xs">
+                      <SelectValue placeholder="Классификация" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {transactionTypes
+                        ?.filter((tt: any) =>
+                          getTransactionAmount(reconciliations, "crm") > 0
+                            ? tt.category === "income"
+                            : tt.category === "expense",
+                        )
+                        ?.map((type: any) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              }
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm">
+                      {formatDate(getTransactionDate(reconciliations[0]))}
+                    </span>
+                    <span className="font-bold">
+                      {formatBalance(
+                        getTransactionAmount(reconciliations, "crm"),
+                      )}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleViewReconciliations(reconciliations)}
+                  >
+                    Детали
+                  </Button>
+                </div>
+                {reconciliations.length > 1 && (
+                  <span className="mt-2">
+                    {`Состоит из ${reconciliations.length} транзакций CRM`}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {/* <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <div className="flex-shrink-0">
                         <div
                             className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -370,8 +396,8 @@ export const ReconciliationRowV2 = ({
                                 }
                                 disabled={isUpdatingReconciliation}
                             >
-                                <SelectTrigger className="w-32 h-7 text-xs">
-                                    <SelectValue placeholder="Тип" />
+                                <SelectTrigger className="w-36 h-7 text-xs">
+                                    <SelectValue placeholder="Классификация" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {transactionTypes?.map((type: any) => (
@@ -390,7 +416,7 @@ export const ReconciliationRowV2 = ({
                 <div className="text-xs text-gray-400 dark:text-gray-500 ml-3 flex-shrink-0">
                     {reconciliation.id.slice(0, 6)}
                 </div> */}
-            </div>
-        </div>
-    )
-}
+      </div>
+    </div>
+  );
+};

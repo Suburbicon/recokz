@@ -306,8 +306,8 @@ export const ImportExpenses = () => {
                                 }
                                 disabled={isUpdatingReconciliation}
                               >
-                                <SelectTrigger className="w-32 h-7 text-xs">
-                                  <SelectValue placeholder="Тип" />
+                                <SelectTrigger className="w-36 h-7 text-xs">
+                                  <SelectValue placeholder="Классификация" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {transactionTypes?.map((type) => (

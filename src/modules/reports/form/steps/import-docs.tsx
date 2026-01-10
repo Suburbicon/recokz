@@ -19,8 +19,7 @@ import {
 } from "@/shared/ui/select";
 import { Input } from "@/shared/ui/input";
 import { formatDate } from "@/shared/lib/dayjs";
-import { type Bank } from '@/shared/models';
-
+import { type Bank } from "@/shared/models";
 
 export const ImportDocsStepForm = () => {
   const params = useParams<{ id: string }>();
@@ -101,13 +100,13 @@ export const ImportDocsStepForm = () => {
           fileName: file.name,
           mimeType: file.type,
           fileSize: file.size,
-          bankName: documentType || '',
+          bankName: documentType || "",
         });
       }
     } catch (error) {
       console.error(error);
     }
-    setDocumentType(undefined)
+    setDocumentType(undefined);
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -232,8 +231,10 @@ export const ImportDocsStepForm = () => {
   };
 
   useEffect(() => {
-    documents?.forEach(d => handleCashBalanceChange(d.id, d.openingBalance?.toString() || ''))
-  }, [documents])
+    documents?.forEach((d) =>
+      handleCashBalanceChange(d.id, d.openingBalance?.toString() || ""),
+    );
+  }, [documents]);
 
   return (
     <div className="p-6 space-y-6">
@@ -245,9 +246,7 @@ export const ImportDocsStepForm = () => {
           Выберите тип документа:
           <Select
             value={documentType}
-            onValueChange={(value: Bank) =>
-              setDocumentType(value)
-            }
+            onValueChange={(value: Bank) => setDocumentType(value)}
             disabled={isUpdating || isParsing}
           >
             <SelectTrigger className="w-26 h-6 text-xs ml-1 inline-flex">
@@ -364,7 +363,7 @@ export const ImportDocsStepForm = () => {
                       </p>
                       <div className="flex items-center space-x-8 mt-1">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Баланс: {formatBalance(document.balance * 100)}
+                          Оборот: {formatBalance(document.balance * 100)}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Транзакций: {document.transactions.length}
@@ -473,7 +472,9 @@ export const ImportDocsStepForm = () => {
       <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Транзакции: {selectedDocument?.name.slice(0,25)}...</DialogTitle>
+            <DialogTitle>
+              Транзакции: {selectedDocument?.name.slice(0, 25)}...
+            </DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] scrollbar-hide">
             {selectedDocument?.transactions.length > 0 ? (

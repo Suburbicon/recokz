@@ -41,7 +41,7 @@ export function TransactionTypeCreate() {
     api.transactionType.create.useMutation({
       onSuccess: () => {
         utils.transactionType.getAll.invalidate();
-        toast.success("Тип транзакции успешно создан");
+        toast.success("Классификация транзакции успешно создана");
         setIsOpen(false);
       },
       onError: (error) => {
@@ -66,9 +66,9 @@ export function TransactionTypeCreate() {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Создайте новый тип транзакции</DialogTitle>
+            <DialogTitle>Создайте новую классификацию транзакции</DialogTitle>
             <DialogDescription>
-              Тип транзакции используется для группировки транзакций.
+              Классификация транзакции используется для группировки транзакций.
             </DialogDescription>
           </DialogHeader>
 
@@ -78,7 +78,7 @@ export function TransactionTypeCreate() {
                 <InputField name="name" label="Название" />
                 <SelectField
                   name="type"
-                  label="Тип"
+                  label="Классификация"
                   options={[
                     { label: "Поступления", value: "income" },
                     { label: "Выбытия", value: "expense" },

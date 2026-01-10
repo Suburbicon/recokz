@@ -597,6 +597,15 @@ export function ResultTable() {
               <TableCell className="text-right font-bold"></TableCell>
             </TableRow>
 
+            {/* На конец периода */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">На конец периода</TableCell>
+              <TableCell className="text-right font-bold">
+                {formatBalance(totalBeginnigFlow + totalCashFlow)}
+              </TableCell>
+              <TableCell className="font-bold"></TableCell>
+            </TableRow>
+
             {/* Продажи, не поступившие на расчетные счета */}
             <TableRow className="bg-green-50 dark:bg-green-950/10">
               <TableCell className="font-bold">
@@ -604,19 +613,6 @@ export function ResultTable() {
               </TableCell>
               <TableCell className="text-right font-bold">
                 {formatBalance(totalNotMatchedCrmDocuments)}
-              </TableCell>
-              <TableCell className="font-bold"></TableCell>
-            </TableRow>
-
-            {/* На конец периода */}
-            <TableRow className="bg-green-50 dark:bg-green-950/10">
-              <TableCell className="font-bold">На конец периода</TableCell>
-              <TableCell className="text-right font-bold">
-                {formatBalance(
-                  totalBeginnigFlow +
-                    totalCashFlow +
-                    totalNotMatchedCrmDocuments,
-                )}
               </TableCell>
               <TableCell className="font-bold"></TableCell>
             </TableRow>
