@@ -19,6 +19,18 @@ import { toast } from "sonner";
 import { ReconciliationRow } from "./components/ReconciliationRow";
 import { ReconciliationRowV2 } from "./components/ReconciliationRowV2";
 import { Input } from "@/shared/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+
+dayjs.extend(customParseFormat);
 
 const reconciliationWithRelations = {
   include: {
@@ -45,6 +57,147 @@ export const formSchema = z.object({
 
 type SchemaType = z.infer<typeof formSchema>;
 
+// Компонент гармошки для транзакций КНП === 190
+const Knp190Accordion = ({
+  knpTransaction,
+  salesReportTransactions,
+  transactionTypes,
+  updateReconciliation,
+  isUpdatingReconciliation,
+  handleViewReconciliations,
+  handleCreateReconcile,
+  handleReconciliationCreate,
+  notReconciliatedCrmTransactions,
+  pickedCrmTransactions,
+  amountsMatch,
+}: {
+  knpTransaction: ReconciliationWithRelations;
+  salesReportTransactions: ReconciliationWithRelations[];
+  transactionTypes: any;
+  updateReconciliation: any;
+  isUpdatingReconciliation: boolean;
+  handleViewReconciliations: any;
+  handleCreateReconcile: any;
+  handleReconciliationCreate: any;
+  notReconciliatedCrmTransactions: ReconciliationWithRelations[];
+  pickedCrmTransactions: string[];
+  amountsMatch: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const formatBalance = (balanceInKopecks: number) => {
+    return (balanceInKopecks / 100).toLocaleString("ru-RU", {
+      style: "currency",
+      currency: "KZT",
+      minimumFractionDigits: 2,
+    });
+  };
+
+  const formatDate = (date: string | Date) => {
+    return new Date(date).toLocaleString("ru-RU", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
+  // amount в Transaction хранится в копейках (Int)
+  const knpAmount = (knpTransaction.bankTransaction?.amount || 0) / 100;
+  const salesReportAmount = salesReportTransactions.reduce(
+    (sum: number, rec: ReconciliationWithRelations) => {
+      return sum + (rec.bankTransaction?.amount || 0) / 100;
+    },
+    0,
+  );
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div
+        className="flex items-center justify-between py-3 px-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center space-x-4 flex-1">
+          <div className="flex-shrink-0">
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-gray-500" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-500" />
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center space-x-4">
+              <div className="w-1/3">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {formatDate(
+                    knpTransaction.bankTransaction?.date || new Date(),
+                  )}
+                </p>
+                <p className="font-bold text-lg">
+                  {formatBalance(knpTransaction.bankTransaction?.amount || 0)}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  КНП: 190
+                </p>
+              </div>
+              {!amountsMatch && (
+                <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="text-sm font-medium">
+                    Суммы не совпадают: КНП 190 ={" "}
+                    {formatBalance(knpAmount * 100)}, Отчет по продажам ={" "}
+                    {formatBalance(salesReportAmount * 100)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Раскрывающийся контент - транзакции из sales_report */}
+      {isExpanded && (
+        <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Транзакции из Отчета по продажам:
+            </p>
+            <div className="space-y-2">
+              {salesReportTransactions.length > 0 ? (
+                salesReportTransactions.map((rec) => (
+                  <ReconciliationRowV2
+                    key={rec.id}
+                    reconciliations={[rec]}
+                    transactionTypes={transactionTypes}
+                    updateReconciliation={updateReconciliation}
+                    isUpdatingReconciliation={isUpdatingReconciliation}
+                    handleViewReconciliations={handleViewReconciliations}
+                    handleCreateReconcile={handleCreateReconcile}
+                    handleReconciliationCreate={handleReconciliationCreate}
+                    notReconciliatedCrmTransactions={
+                      notReconciliatedCrmTransactions
+                    }
+                    pickedCrmTransactions={pickedCrmTransactions}
+                    currentTransactionFilter="Kaspi"
+                    type="bank"
+                    isMini={true}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Нет соответствующих транзакций из Отчета по продажам
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ImportSales = () => {
   const params = useParams<{ id: string }>();
   const [isModalReconciliationDetailOpen, setIsModalReconciliationDetailOpen] =
@@ -67,6 +220,9 @@ export const ImportSales = () => {
   );
   const [currentTransactionFilter, setCurrentTransactionFilter] =
     useState<TransactionType>("Kaspi");
+  const [reconciliationStatusFilter, setReconciliationStatusFilter] = useState<
+    "all" | "reconciled" | "unreconciled"
+  >("all");
 
   const { data: report, isLoading } = api.reports.getById.useQuery({
     id: params.id,
@@ -178,97 +334,374 @@ export const ImportSales = () => {
     }
   };
 
+  // Функция для проверки статуса сверки транзакции
+  const isReconciliationResolved = useCallback(
+    (reconciliation: ReconciliationWithRelations): boolean => {
+      // Проверяем, есть ли и bankTransaction и crmTransaction (полная сверка)
+      const isMatched = !!(
+        reconciliation.bankTransaction && reconciliation.crmTransaction
+      );
+      // Или есть typeId (классифицирована)
+      const hasType = !!reconciliation.typeId;
+      return isMatched || hasType;
+    },
+    [],
+  );
+
+  const extractDateFromPaymentPurpose = (
+    purpose: string | undefined,
+  ): dayjs.Dayjs | null => {
+    if (!purpose) return null;
+
+    const dateMatch = purpose.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!dateMatch) return null;
+
+    const [, first, second, year] = dateMatch;
+
+    const dateDDMM = dayjs(
+      `${first.padStart(2, "0")}/${second.padStart(2, "0")}/${year}`,
+      "DD/MM/YYYY",
+      true,
+    );
+    if (dateDDMM.isValid()) return dateDDMM;
+
+    const dateMMDD = dayjs(
+      `${first.padStart(2, "0")}/${second.padStart(2, "0")}/${year}`,
+      "MM/DD/YYYY",
+      true,
+    );
+    if (dateMMDD.isValid()) return dateMMDD;
+
+    return null;
+  };
+
+  // Группировка транзакций КНП === 190 с транзакциями из sales_report
+  const knp190GroupedTransactions = useMemo(() => {
+    if (!report || currentTransactionFilter !== "Kaspi") return new Map();
+
+    const grouped = new Map<
+      string,
+      {
+        knpTransaction: ReconciliationWithRelations;
+        salesReportTransactions: ReconciliationWithRelations[];
+      }
+    >();
+
+    // Находим все транзакции с КНП === 190 из документов типа Kaspi и bank_statement
+    const knp190Transactions = report.reconciliations.filter((rec) => {
+      if (
+        rec.bankTransaction &&
+        rec.bankTransaction.meta &&
+        typeof rec.bankTransaction.meta === "object" &&
+        "bank" in rec.bankTransaction.meta &&
+        rec.bankTransaction.meta.bank === "Kaspi" &&
+        rec.bankTransaction.meta["КНП"] === "190" &&
+        rec.bankTransaction.document?.bankDocumentType === "bank_statement"
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    // Для каждой транзакции КНП === 190 находим соответствующие транзакции из sales_report
+    knp190Transactions.forEach((knpRec) => {
+      const meta = knpRec.bankTransaction?.meta;
+      const paymentPurpose =
+        meta && typeof meta === "object" && "Назначение платежа" in meta
+          ? (meta["Назначение платежа"] as string | undefined)
+          : undefined;
+      const transactionDate = extractDateFromPaymentPurpose(paymentPurpose);
+
+      if (!transactionDate || !transactionDate.isValid()) return;
+
+      // Находим транзакции из sales_report с той же датой
+      const salesReportTransactions = report.reconciliations.filter((rec) => {
+        if (
+          rec.bankTransaction &&
+          rec.bankTransaction.meta &&
+          typeof rec.bankTransaction.meta === "object" &&
+          "bank" in rec.bankTransaction.meta &&
+          rec.bankTransaction.meta.bank === "Kaspi" &&
+          rec.bankTransaction.meta["КНП"] !== "190" &&
+          rec.bankTransaction.document?.bankDocumentType === "sales_report"
+        ) {
+          const recDate = dayjs(rec.bankTransaction.date).startOf("day");
+          const targetDate = transactionDate.startOf("day");
+          return recDate.isSame(targetDate, "day");
+        }
+        return false;
+      });
+
+      grouped.set(knpRec.id, {
+        knpTransaction: knpRec,
+        salesReportTransactions,
+      });
+    });
+
+    // Применяем фильтр по статусу сверки к гармошкам
+    if (reconciliationStatusFilter === "all") {
+      return grouped;
+    }
+
+    const filtered = new Map<
+      string,
+      {
+        knpTransaction: ReconciliationWithRelations;
+        salesReportTransactions: ReconciliationWithRelations[];
+      }
+    >();
+
+    grouped.forEach((group, key) => {
+      // Проверяем статус транзакций внутри гармошки
+      const allTransactions = [
+        group.knpTransaction,
+        ...group.salesReportTransactions,
+      ];
+      const shouldInclude = allTransactions.some((rec) => {
+        const resolved = isReconciliationResolved(rec);
+        return reconciliationStatusFilter === "reconciled"
+          ? resolved
+          : !resolved;
+      });
+
+      if (shouldInclude) {
+        // Фильтруем транзакции внутри гармошки
+        const filteredSalesReport = group.salesReportTransactions.filter(
+          (rec) => {
+            const resolved = isReconciliationResolved(rec);
+            return reconciliationStatusFilter === "reconciled"
+              ? resolved
+              : !resolved;
+          },
+        );
+
+        filtered.set(key, {
+          knpTransaction: group.knpTransaction,
+          salesReportTransactions: filteredSalesReport,
+        });
+      }
+    });
+
+    return filtered;
+  }, [
+    report,
+    currentTransactionFilter,
+    reconciliationStatusFilter,
+    isReconciliationResolved,
+  ]);
+
   const reconciliations = useMemo(() => {
     if (report) {
       switch (currentTransactionFilter) {
         case "Kaspi":
-          return Object.groupBy(
-            report.reconciliations
-              .filter((reconciliation) => {
-                if (
-                  reconciliation.bankTransaction &&
-                  reconciliation.bankTransaction.meta &&
-                  typeof reconciliation.bankTransaction.meta === "object" &&
-                  "bank" in reconciliation.bankTransaction?.meta &&
-                  reconciliation.bankTransaction.meta.bank ===
-                    currentTransactionFilter &&
-                  reconciliation.bankTransaction.meta["КНП"] !== "190"
-                ) {
-                  return true;
-                }
+          // Собираем ID всех транзакций из sales_report, которые попали в гармошку
+          const excludedSalesReportIds = new Set<string>();
+          if (knp190GroupedTransactions.size > 0) {
+            Array.from(knp190GroupedTransactions.values()).forEach((group) => {
+              group.salesReportTransactions.forEach(
+                (rec: ReconciliationWithRelations) => {
+                  if (rec.id) {
+                    excludedSalesReportIds.add(rec.id);
+                  }
+                },
+              );
+            });
+          }
 
+          // Исключаем транзакции КНП === 190 и транзакции из sales_report, которые попали в гармошку
+          const filtered = report.reconciliations
+            .filter((reconciliation) => {
+              // Исключаем транзакции, которые попали в гармошку
+              if (excludedSalesReportIds.has(reconciliation.id)) {
                 return false;
-              })
-              .sort(filterByDateReconciliations),
+              }
+              if (
+                reconciliation.bankTransaction &&
+                reconciliation.bankTransaction.meta &&
+                typeof reconciliation.bankTransaction.meta === "object" &&
+                "bank" in reconciliation.bankTransaction?.meta &&
+                reconciliation.bankTransaction.meta.bank ===
+                  currentTransactionFilter &&
+                reconciliation.bankTransaction.meta["КНП"] !== "190"
+              ) {
+                return true;
+              }
+
+              return false;
+            })
+            .sort(filterByDateReconciliations);
+
+          // Применяем фильтр по статусу сверки
+          const statusFiltered =
+            reconciliationStatusFilter === "all"
+              ? filtered
+              : filtered.filter((rec) => {
+                  const resolved = isReconciliationResolved(rec);
+                  return reconciliationStatusFilter === "reconciled"
+                    ? resolved
+                    : !resolved;
+                });
+
+          return Object.groupBy(
+            statusFiltered,
             (rec) => rec.bankTransactionId!,
           );
-        case "Halyk":
-          return Object.groupBy(
-            report.reconciliations
-              .filter((reconciliation) => {
-                if (
-                  reconciliation.bankTransaction &&
-                  reconciliation.bankTransaction.meta &&
-                  typeof reconciliation.bankTransaction.meta === "object" &&
-                  "bank" in reconciliation.bankTransaction?.meta &&
-                  reconciliation.bankTransaction.meta.bank ===
-                    currentTransactionFilter &&
-                  !(
-                    reconciliation.bankTransaction.meta["Назначение платежа"] ||
-                    ""
-                  )
-                    .toString()
-                    .includes("Расчеты по карточкам")
-                ) {
-                  return true;
-                }
+        case "Halyk": {
+          const filtered = report.reconciliations
+            .filter((reconciliation) => {
+              if (
+                reconciliation.bankTransaction &&
+                reconciliation.bankTransaction.meta &&
+                typeof reconciliation.bankTransaction.meta === "object" &&
+                "bank" in reconciliation.bankTransaction?.meta &&
+                reconciliation.bankTransaction.meta.bank ===
+                  currentTransactionFilter &&
+                !(
+                  reconciliation.bankTransaction.meta["Назначение платежа"] ||
+                  ""
+                )
+                  .toString()
+                  .includes("Расчеты по карточкам")
+              ) {
+                return true;
+              }
 
-                return false;
-              })
-              .sort(filterByDateReconciliations),
+              return false;
+            })
+            .sort(filterByDateReconciliations);
+
+          const statusFiltered =
+            reconciliationStatusFilter === "all"
+              ? filtered
+              : filtered.filter((rec) => {
+                  const resolved = isReconciliationResolved(rec);
+                  return reconciliationStatusFilter === "reconciled"
+                    ? resolved
+                    : !resolved;
+                });
+
+          return Object.groupBy(
+            statusFiltered,
             (rec) => rec.bankTransactionId!,
           );
-        case "CRM":
-          return Object.groupBy(
-            report.reconciliations
-              .filter((reconciliation) => {
-                if (reconciliation.crmTransaction) {
-                  return true;
-                }
+        }
+        case "CRM": {
+          const filtered = report.reconciliations
+            .filter((reconciliation) => {
+              if (reconciliation.crmTransaction) {
+                return true;
+              }
 
-                return false;
-              })
-              .sort(filterByDateReconciliations),
-            (rec) => rec.crmTransactionId!,
-          );
-        case "Cash":
-          return Object.groupBy(
-            report.reconciliations
-              .filter((reconciliation) => {
-                if (
-                  reconciliation.crmTransaction &&
-                  reconciliation.crmTransaction.meta &&
-                  typeof reconciliation.crmTransaction.meta === "object" &&
-                  "byCash" in reconciliation.crmTransaction.meta &&
-                  reconciliation.crmTransaction.meta.byCash
-                ) {
-                  return true;
-                }
+              return false;
+            })
+            .sort(filterByDateReconciliations);
 
-                return false;
-              })
-              .sort(filterByDateReconciliations),
-            (rec) => rec.crmTransactionId!,
-          );
+          const statusFiltered =
+            reconciliationStatusFilter === "all"
+              ? filtered
+              : filtered.filter((rec) => {
+                  const resolved = isReconciliationResolved(rec);
+                  return reconciliationStatusFilter === "reconciled"
+                    ? resolved
+                    : !resolved;
+                });
+
+          return Object.groupBy(statusFiltered, (rec) => rec.crmTransactionId!);
+        }
+        case "Cash": {
+          const filtered = report.reconciliations
+            .filter((reconciliation) => {
+              if (
+                reconciliation.crmTransaction &&
+                reconciliation.crmTransaction.meta &&
+                typeof reconciliation.crmTransaction.meta === "object" &&
+                "byCash" in reconciliation.crmTransaction.meta &&
+                reconciliation.crmTransaction.meta.byCash
+              ) {
+                return true;
+              }
+
+              return false;
+            })
+            .sort(filterByDateReconciliations);
+
+          const statusFiltered =
+            reconciliationStatusFilter === "all"
+              ? filtered
+              : filtered.filter((rec) => {
+                  const resolved = isReconciliationResolved(rec);
+                  return reconciliationStatusFilter === "reconciled"
+                    ? resolved
+                    : !resolved;
+                });
+
+          return Object.groupBy(statusFiltered, (rec) => rec.crmTransactionId!);
+        }
         default:
           return [];
       }
     }
     return [];
-  }, [currentTransactionFilter, report, filterByDateReconciliations]);
+  }, [
+    currentTransactionFilter,
+    report,
+    filterByDateReconciliations,
+    knp190GroupedTransactions,
+    reconciliationStatusFilter,
+    isReconciliationResolved,
+  ]);
+
+  const reconciliationTotals = useMemo(() => {
+    let reconciledTotal = 0;
+    let unreconciledTotal = 0;
+
+    Object.values(reconciliations).forEach((recs) => {
+      if (!recs || recs.length === 0) return;
+
+      const rec = recs[0];
+      const resolved = isReconciliationResolved(rec);
+      const amount = rec.bankTransaction
+        ? (rec.bankTransaction.amount || 0) / 100
+        : rec.crmTransaction
+          ? (rec.crmTransaction.amount || 0) / 100
+          : 0;
+
+      if (resolved) {
+        reconciledTotal += amount;
+      } else {
+        unreconciledTotal += amount;
+      }
+    });
+
+    if (currentTransactionFilter === "Kaspi") {
+      Array.from(knp190GroupedTransactions.values()).forEach((group) => {
+        group.salesReportTransactions.forEach(
+          (rec: ReconciliationWithRelations) => {
+            const resolved = isReconciliationResolved(rec);
+            const amount = (rec.bankTransaction?.amount || 0) / 100;
+
+            if (resolved) {
+              reconciledTotal += amount;
+            } else {
+              unreconciledTotal += amount;
+            }
+          },
+        );
+      });
+    }
+
+    return { reconciledTotal, unreconciledTotal };
+  }, [
+    reconciliations,
+    knp190GroupedTransactions,
+    currentTransactionFilter,
+    isReconciliationResolved,
+  ]);
 
   const isKaspiTransactionsAmountOfDocumentsIsSame = useMemo(() => {
-    const knpAmount = report?.reconciliations.reduce((acc, rec) => {
+    if (!report) return false;
+
+    const knpAmount = report.reconciliations.reduce((acc, rec) => {
       if (
         rec.bankTransaction &&
         rec.bankTransaction.meta &&
@@ -276,12 +709,28 @@ export const ImportSales = () => {
         "КНП" in rec.bankTransaction?.meta &&
         rec.bankTransaction.meta["КНП"] === "190"
       ) {
-        acc += rec.bankTransaction.amount / 100;
+        const paymentPurpose = rec.bankTransaction.meta[
+          "Назначение платежа"
+        ] as string | undefined;
+        const transactionDate = extractDateFromPaymentPurpose(paymentPurpose);
+
+        if (transactionDate && transactionDate.isValid()) {
+          const startDate = dayjs(report.startDate).startOf("day");
+          const endDate = dayjs(report.endDate).endOf("day");
+          const txDate = transactionDate.startOf("day");
+
+          if (
+            (txDate.isAfter(startDate) || txDate.isSame(startDate, "day")) &&
+            (txDate.isBefore(endDate) || txDate.isSame(endDate, "day"))
+          ) {
+            acc += rec.bankTransaction.amount / 100;
+          }
+        }
       }
       return acc;
     }, 0);
 
-    return report?.documents.some((d) => d.balance === knpAmount);
+    return report.documents.some((d) => d.balance === knpAmount);
   }, [report]);
 
   const notReconciliatedCrmTransactions = useMemo(() => {
@@ -502,7 +951,6 @@ export const ImportSales = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Сверка</h2>
         <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
           {!isKaspiTransactionsAmountOfDocumentsIsSame && (
             <div className="mb-3 text-red-500">
@@ -559,45 +1007,118 @@ export const ImportSales = () => {
         </div>
       </div>
 
-      <div className="flex items-center space-x-3">
-        <button
-          type="button"
-          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Kaspi" && "bg-blue-600"}`}
-          onClick={() => chooseTypeBank("Kaspi")}
-        >
-          Kaspi
-        </button>
-        <button
-          type="button"
-          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Halyk" && "bg-blue-600"}`}
-          onClick={() => chooseTypeBank("Halyk")}
-        >
-          Halyk
-        </button>
-        <button
-          type="button"
-          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "CRM" && "bg-blue-600"}`}
-          onClick={() => chooseTypeBank("CRM")}
-        >
-          CRM
-        </button>
-        <button
-          type="button"
-          className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Cash" && "bg-blue-600"}`}
-          onClick={() => chooseTypeBank("Cash")}
-        >
-          Наличные
-        </button>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Kaspi" && "bg-blue-600"}`}
+            onClick={() => chooseTypeBank("Kaspi")}
+          >
+            Kaspi
+          </button>
+          <button
+            type="button"
+            className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Halyk" && "bg-blue-600"}`}
+            onClick={() => chooseTypeBank("Halyk")}
+          >
+            Halyk
+          </button>
+          <button
+            type="button"
+            className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "CRM" && "bg-blue-600"}`}
+            onClick={() => chooseTypeBank("CRM")}
+          >
+            CRM
+          </button>
+          <button
+            type="button"
+            className={`p-2 border border-blue-600 hover:border-blue-700 rounded-xl cursor-pointer ${currentTransactionFilter === "Cash" && "bg-blue-600"}`}
+            onClick={() => chooseTypeBank("Cash")}
+          >
+            Наличные
+          </button>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Фильтр:
+          </span>
+          <Select
+            value={reconciliationStatusFilter}
+            onValueChange={(value: "all" | "reconciled" | "unreconciled") =>
+              setReconciliationStatusFilter(value)
+            }
+          >
+            <SelectTrigger className="w-40 h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все</SelectItem>
+              <SelectItem value="reconciled">Сверенные</SelectItem>
+              <SelectItem value="unreconciled">Не сверенные</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {Object.values(reconciliations).length > 0 ? (
+      {Object.values(reconciliations).length > 0 ||
+      (currentTransactionFilter === "Kaspi" &&
+        knp190GroupedTransactions.size > 0) ? (
         <div>
           <h3 className="text-lg font-medium mb-3">
-            Транзакции ({Object.values(reconciliations).length})
+            Транзакции (
+            {Object.values(reconciliations).length +
+              (currentTransactionFilter === "Kaspi"
+                ? Array.from(knp190GroupedTransactions.values()).length
+                : 0)}
+            )
           </h3>
           <div className="w-[100%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {/* Гармошка для транзакций КНП === 190 */}
+                {currentTransactionFilter === "Kaspi" &&
+                  Array.from(knp190GroupedTransactions.values()).map(
+                    (group) => {
+                      const knpAmount =
+                        (group.knpTransaction.bankTransaction?.amount || 0) /
+                        100;
+                      const salesReportAmount =
+                        group.salesReportTransactions.reduce(
+                          (sum: number, rec: ReconciliationWithRelations) => {
+                            return (
+                              sum + (rec.bankTransaction?.amount || 0) / 100
+                            );
+                          },
+                          0,
+                        );
+                      const amountsMatch =
+                        Math.abs(knpAmount - salesReportAmount) < 0.01;
+
+                      return (
+                        <Knp190Accordion
+                          key={group.knpTransaction.id}
+                          knpTransaction={group.knpTransaction}
+                          salesReportTransactions={
+                            group.salesReportTransactions
+                          }
+                          transactionTypes={transactionTypes}
+                          updateReconciliation={updateDataReconciliation}
+                          isUpdatingReconciliation={isUpdatingReconciliation}
+                          handleViewReconciliations={handleViewReconciliations}
+                          handleCreateReconcile={handleCreateReconcile}
+                          handleReconciliationCreate={
+                            handleReconciliationCreate
+                          }
+                          notReconciliatedCrmTransactions={
+                            notReconciliatedCrmTransactions || []
+                          }
+                          pickedCrmTransactions={pickedCrmTransactions}
+                          amountsMatch={amountsMatch}
+                        />
+                      );
+                    },
+                  )}
+                {/* Обычные транзакции */}
                 {Object.values(reconciliations).map(
                   (reconciliations) =>
                     reconciliations && (
@@ -620,6 +1141,43 @@ export const ImportSales = () => {
                       />
                     ),
                 )}
+              </div>
+            </div>
+          </div>
+          {/* Тоталы сверенных и не сверенных транзакций */}
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    Сверенные транзакции
+                  </p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {formatBalance(reconciliationTotals.reconciledTotal * 100)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    Не сверенные транзакции
+                  </p>
+                  <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                    {formatBalance(
+                      reconciliationTotals.unreconciledTotal * 100,
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    Всего
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {formatBalance(
+                      (reconciliationTotals.reconciledTotal +
+                        reconciliationTotals.unreconciledTotal) *
+                        100,
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

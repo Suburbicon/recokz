@@ -7,7 +7,7 @@ import { ai } from "@/server/ai";
 import { parseDateTime, areSameDate } from "@/shared/lib/parse-date-time";
 import { parseAmount } from "@/shared/lib/amount";
 import dayjs from "dayjs";
-import { DocumentType, Transaction } from "@prisma/client";
+import { DocumentType, Transaction, BankDocumentType } from "@prisma/client";
 
 export const documentsRouter = createTRPCRouter({
   parse: protectedProcedure
@@ -19,6 +19,7 @@ export const documentsRouter = createTRPCRouter({
         fileSize: z.number(),
         mimeType: z.string(),
         bankName: z.string(),
+        bankDocumentType: z.enum(["sales_report", "bank_statement"]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -199,6 +200,10 @@ export const documentsRouter = createTRPCRouter({
             type: input.bankName !== "CRM" ? "bank" : "crm",
             bankName: input.bankName,
             reportId: input.reportId,
+            bankDocumentType:
+              input.bankName !== "CRM" && input.bankDocumentType
+                ? (input.bankDocumentType as BankDocumentType)
+                : null,
           },
         });
 
@@ -327,6 +332,7 @@ export const documentsRouter = createTRPCRouter({
         type: z.enum(["bank", "crm"]).optional(),
         balance: z.number().optional(),
         openingBalance: z.number().optional(),
+        bankDocumentType: z.enum(["sales_report", "bank_statement"]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

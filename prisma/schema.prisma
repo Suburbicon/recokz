@@ -81,13 +81,14 @@ enum ReportStatus {
 }
 
 model Document {
-  id       String       @id @default(uuid()) @map("id")
-  name     String       @map("name")
-  balance  Int          @map("balance")
-  link     String       @map("link")
-  type     DocumentType @map("type")
-  bankName String?      @map("bankName")
-  openingBalance Int?   @map("openingBalance")
+  id             String          @id @default(uuid()) @map("id")
+  name           String          @map("name")
+  balance        Int             @map("balance")
+  link           String          @map("link")
+  type           DocumentType     @map("type")
+  bankName       String?         @map("bankName")
+  openingBalance Int?            @map("openingBalance")
+  bankDocumentType BankDocumentType? @map("bank_document_type")
 
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   reportId String @map("report_id")
@@ -102,6 +103,11 @@ model Document {
 enum DocumentType {
   bank
   crm
+}
+
+enum BankDocumentType {
+  sales_report
+  bank_statement
 }
 
 model Transaction {

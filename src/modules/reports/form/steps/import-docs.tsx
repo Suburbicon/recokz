@@ -34,6 +34,9 @@ export const ImportDocsStepForm = () => {
     Record<string, number>
   >({});
   const [documentType, setDocumentType] = useState<Bank>();
+  const [bankDocumentType, setBankDocumentType] = useState<
+    "sales_report" | "bank_statement" | undefined
+  >();
 
   const { data: documents, isLoading: isLoadingDocuments } =
     api.documents.getAll.useQuery({
@@ -101,12 +104,19 @@ export const ImportDocsStepForm = () => {
           mimeType: file.type,
           fileSize: file.size,
           bankName: documentType || "",
+          bankDocumentType:
+            documentType && documentType !== "CRM"
+              ? bankDocumentType
+              : undefined,
         });
       }
+      setDocumentType(undefined);
+      setBankDocumentType(undefined);
     } catch (error) {
       console.error(error);
+      setDocumentType(undefined);
+      setBankDocumentType(undefined);
     }
-    setDocumentType(undefined);
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -187,7 +197,6 @@ export const ImportDocsStepForm = () => {
         type: newType,
       });
 
-      // If changing from bank to CRM, remove cash balance from state
       if (newType === "crm") {
         setDocumentCashBalances((prev) => {
           const newState = { ...prev };
@@ -195,6 +204,20 @@ export const ImportDocsStepForm = () => {
           return newState;
         });
       }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleBankDocumentTypeChange = async (
+    documentId: string,
+    newType: "sales_report" | "bank_statement",
+  ) => {
+    try {
+      await updateDocument({
+        id: documentId,
+        bankDocumentType: newType,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -242,22 +265,57 @@ export const ImportDocsStepForm = () => {
         <h2 className="text-xl font-semibold mb-2">Загрузите документы</h2>
         <p className="mb-6">Выгрузка с банков и CRM-систем</p>
 
-        <div className="text-sm flex items-center gap-2 mb-4">
-          Выберите тип документа:
-          <Select
-            value={documentType}
-            onValueChange={(value: Bank) => setDocumentType(value)}
-            disabled={isUpdating || isParsing}
-          >
-            <SelectTrigger className="w-26 h-6 text-xs ml-1 inline-flex">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Kaspi">Kaspi</SelectItem>
-              <SelectItem value="Halyk">Halyk</SelectItem>
-              <SelectItem value="CRM">CRM</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="space-y-3 mb-4">
+          <div className="text-sm flex items-center gap-2">
+            Выберите тип документа:
+            <Select
+              key={documentType ?? "empty"}
+              value={documentType}
+              onValueChange={(value: Bank) => {
+                setDocumentType(value as Bank);
+                if (value === "CRM") {
+                  setBankDocumentType(undefined);
+                }
+              }}
+              disabled={isUpdating || isParsing}
+            >
+              <SelectTrigger className="w-34 h-6 text-xs ml-1 inline-flex">
+                <SelectValue placeholder="Выберите тип" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Kaspi">Kaspi</SelectItem>
+                <SelectItem value="Halyk">Halyk</SelectItem>
+                <SelectItem value="CRM">CRM</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {documentType && documentType !== "CRM" && (
+            <div className="text-sm flex items-center gap-2">
+              Тип банковского документа:
+              <Select
+                key={bankDocumentType ?? "empty"}
+                value={bankDocumentType}
+                onValueChange={(value) =>
+                  setBankDocumentType(
+                    value as "sales_report" | "bank_statement",
+                  )
+                }
+                disabled={isUpdating || isParsing}
+              >
+                <SelectTrigger className="w-40 h-6 text-xs ml-1 inline-flex">
+                  <SelectValue placeholder="Выберите тип" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sales_report">
+                    Отчет по продажам
+                  </SelectItem>
+                  <SelectItem value="bank_statement">
+                    Выписка из банка
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {documentType && (
@@ -326,7 +384,11 @@ export const ImportDocsStepForm = () => {
         <div className="flex justify-end">
           <button
             onClick={handleParse}
-            disabled={isParsing}
+            disabled={
+              isParsing ||
+              !documentType ||
+              (documentType !== "CRM" && !bankDocumentType)
+            }
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isParsing ? "Обработка..." : "Обработать файлы"}
@@ -357,11 +419,11 @@ export const ImportDocsStepForm = () => {
                         <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="w-full flex-1">
                       <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
                         {document.name}
                       </p>
-                      <div className="flex items-center space-x-8 mt-1">
+                      <div className="flex flex-col space-y-4 mt-4">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Оборот: {formatBalance(document.balance * 100)}
                         </p>
@@ -389,6 +451,33 @@ export const ImportDocsStepForm = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                        {document.type === "bank" && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                            Тип документа:
+                            <Select
+                              value={document.bankDocumentType || ""}
+                              onValueChange={(value) =>
+                                handleBankDocumentTypeChange(
+                                  document.id,
+                                  value as "sales_report" | "bank_statement",
+                                )
+                              }
+                              disabled={isUpdating}
+                            >
+                              <SelectTrigger className="w-50 h-6 text-xs ml-1 inline-flex">
+                                <SelectValue placeholder="Выберите тип" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sales_report">
+                                  Отчет по продажам
+                                </SelectItem>
+                                <SelectItem value="bank_statement">
+                                  Выписка из банка
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

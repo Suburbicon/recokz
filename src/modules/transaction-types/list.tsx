@@ -24,7 +24,9 @@ export function TransactionTypeList() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <Typography size="h4-med">Типы транзакций по поступлениям</Typography>
+      <Typography size="h4-med">
+        Классификации транзакций по поступлениям
+      </Typography>
       <Table>
         <TableHeader>
           <TableRow>
@@ -50,7 +52,9 @@ export function TransactionTypeList() {
         </TableBody>
       </Table>
 
-      <Typography size="h4-med">Типы транзакций по выбытиям</Typography>
+      <Typography size="h4-med">
+        Классификации транзакций по выбытиям
+      </Typography>
       <Table>
         <TableHeader>
           <TableRow>
