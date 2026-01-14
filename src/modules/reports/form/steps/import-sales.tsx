@@ -29,6 +29,7 @@ import {
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { extractDateFromPaymentPurpose } from "./lib/extract-date-from-payment-purpose";
 
 dayjs.extend(customParseFormat);
 
@@ -347,33 +348,6 @@ export const ImportSales = () => {
     },
     [],
   );
-
-  const extractDateFromPaymentPurpose = (
-    purpose: string | undefined,
-  ): dayjs.Dayjs | null => {
-    if (!purpose) return null;
-
-    const dateMatch = purpose.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (!dateMatch) return null;
-
-    const [, first, second, year] = dateMatch;
-
-    const dateDDMM = dayjs(
-      `${first.padStart(2, "0")}/${second.padStart(2, "0")}/${year}`,
-      "DD/MM/YYYY",
-      true,
-    );
-    if (dateDDMM.isValid()) return dateDDMM;
-
-    const dateMMDD = dayjs(
-      `${first.padStart(2, "0")}/${second.padStart(2, "0")}/${year}`,
-      "MM/DD/YYYY",
-      true,
-    );
-    if (dateMMDD.isValid()) return dateMMDD;
-
-    return null;
-  };
 
   // Группировка транзакций КНП === 190 с транзакциями из sales_report
   const knp190GroupedTransactions = useMemo(() => {

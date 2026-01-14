@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import dayjs from "dayjs";
 import { useParams } from "next/navigation";
 import { api } from "@/shared/lib/trpc/client";
 import {
@@ -16,6 +17,7 @@ import { Button } from "@/shared/ui/button";
 import { Download } from "lucide-react";
 import { type Bank } from "@/shared/models";
 import * as XLSX from "xlsx";
+import { extractDateFromPaymentPurpose } from "./lib/extract-date-from-payment-purpose";
 
 const notAllowedTransactionTypeName = ["Пополнение наличными", "Дивиденды"];
 
@@ -126,8 +128,6 @@ export function ResultTable() {
     return calculatedIncome;
   }, [report?.reconciliations]);
 
-  console.log(incomeByType);
-
   const amountOfIncomeByType = useMemo(() => {
     return Object.values(incomeByType).reduce(
       (acc, val) => (acc += Object.values(val).reduce((a, v) => (a += v), 0)),
@@ -191,6 +191,33 @@ export function ResultTable() {
       .flatMap((v) => v)
       .reduce((acc, val) => (acc += val?.openingBalance || 0), 0);
   }, [bankDocuments]);
+
+  const totalPreviousPeriodSales = useMemo(() => {
+    return report?.reconciliations.reduce((acc, rec) => {
+      if (
+        rec.bankTransaction &&
+        rec.bankTransaction.meta &&
+        typeof rec.bankTransaction.meta === "object" &&
+        "КНП" in rec.bankTransaction?.meta &&
+        rec.bankTransaction.meta["КНП"] === "190"
+      ) {
+        const paymentPurpose = rec.bankTransaction.meta[
+          "Назначение платежа"
+        ] as string | undefined;
+        const transactionDate = extractDateFromPaymentPurpose(paymentPurpose);
+
+        if (transactionDate && transactionDate.isValid()) {
+          const startDate = dayjs(report.startDate).startOf("day");
+          const endDate = dayjs(report.endDate).endOf("day");
+          const txDate = transactionDate.startOf("day");
+          if (txDate.isBefore(startDate) && endDate.isAfter(txDate)) {
+            acc += rec.bankTransaction.amount / 100;
+          }
+        }
+      }
+      return acc;
+    }, 0);
+  }, [report?.reconciliations, report?.startDate, report?.endDate]);
 
   if (isLoading) {
     return (
@@ -486,7 +513,23 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(amountOfIncomeByType)}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-total-income-${id}`}
+                  className="text-right"
+                >
+                  {Object.values(incomeByType).reduce((acc, val) => {
+                    acc += val[bankName as Bank] || 0;
+                    return acc;
+                  }, 0)}
+                </TableCell>
+              ))}
+              <TableCell className="text-right">
+                {Object.values(incomeByType).reduce((acc, val) => {
+                  acc += val["CRM"] || 0;
+                  return acc;
+                }, 0)}
+              </TableCell>
             </TableRow>
 
             {/* ВЫБЫТИЯ */}
@@ -517,7 +560,23 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(amountOfExpenseByType)}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-total-income-${id}`}
+                  className="text-right"
+                >
+                  {Object.values(expensesByType).reduce((acc, val) => {
+                    acc += val[bankName as Bank] || 0;
+                    return acc;
+                  }, 0)}
+                </TableCell>
+              ))}
+              <TableCell className="text-right">
+                {Object.values(expensesByType).reduce((acc, val) => {
+                  acc += val["CRM"] || 0;
+                  return acc;
+                }, 0)}
+              </TableCell>
             </TableRow>
 
             {/* ИТОГО ПОСТУПЛЕНИЯ И УБЫТИЯ */}
@@ -528,7 +587,31 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(amountOfIncomeByType + amountOfExpenseByType)}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-total-income-${id}`}
+                  className="text-right"
+                >
+                  {Object.values(incomeByType).reduce((acc, val) => {
+                    acc += val[bankName as Bank] || 0;
+                    return acc;
+                  }, 0) +
+                    Object.values(expensesByType).reduce((acc, val) => {
+                      acc += val[bankName as Bank] || 0;
+                      return acc;
+                    }, 0)}
+                </TableCell>
+              ))}
+              <TableCell className="text-right">
+                {Object.values(incomeByType).reduce((acc, val) => {
+                  acc += val["CRM"] || 0;
+                  return acc;
+                }, 0) +
+                  Object.values(expensesByType).reduce((acc, val) => {
+                    acc += val["CRM"] || 0;
+                    return acc;
+                  }, 0)}
+              </TableCell>
             </TableRow>
 
             {/* ПОПОЛНЕНИЯ НАЛИЧНЫМИ */}
@@ -613,6 +696,17 @@ export function ResultTable() {
               </TableCell>
               <TableCell className="text-right font-bold">
                 {formatBalance(totalNotMatchedCrmDocuments)}
+              </TableCell>
+              <TableCell className="font-bold"></TableCell>
+            </TableRow>
+
+            {/* Продажи, поступившие за предыдущие периоды */}
+            <TableRow className="bg-green-50 dark:bg-green-950/10">
+              <TableCell className="font-bold">
+                Продажи, поступившие за предыдущие периоды
+              </TableCell>
+              <TableCell className="text-right font-bold">
+                {formatBalance(totalPreviousPeriodSales || 0)}
               </TableCell>
               <TableCell className="font-bold"></TableCell>
             </TableRow>
