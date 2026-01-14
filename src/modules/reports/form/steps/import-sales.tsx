@@ -56,6 +56,20 @@ export const formSchema = z.object({
     .min(1, "Обязательное поле"),
 });
 
+export const cashTransactionFormSchema = z.object({
+  amount: z
+    .number({ message: "Обязательное поле" })
+    .positive("Сумма должна быть положительной"),
+  addedBy: z
+    .string({ message: "Обязательное поле" })
+    .min(1, "Обязательное поле"),
+  purpose: z
+    .string({ message: "Обязательное поле" })
+    .min(1, "Обязательное поле"),
+});
+
+type CashTransactionFormType = z.infer<typeof cashTransactionFormSchema>;
+
 type SchemaType = z.infer<typeof formSchema>;
 
 // Компонент гармошки для транзакций КНП === 190
@@ -211,6 +225,7 @@ export const ImportSales = () => {
     useState(false);
   const [isModalReconcileCreateOpen, setIsModalReconcileCreateOpen] =
     useState(false);
+  const [isModalCashCreateOpen, setIsModalCashCreateOpen] = useState(false);
   const [currentBankReconciliation, setCurrentBankReconciliation] =
     useState<ReconciliationWithRelations>();
   const [currentReconciliations, setCurrentReconciliations] = useState<
@@ -261,6 +276,21 @@ export const ImportSales = () => {
     },
   });
 
+  const {
+    mutateAsync: createCashTransaction,
+    isPending: isPendingCreateCashTransaction,
+  } = api.transaction.createCash.useMutation({
+    onSuccess: () => {
+      utils.reports.getById.invalidate({ id: params.id });
+      setIsModalCashCreateOpen(false);
+      form.reset();
+      toast.success("Наличная транзакция успешно создана");
+    },
+    onError: () => {
+      toast.error("Ошибка при создании наличной транзакции");
+    },
+  });
+
   const utils = api.useUtils();
   const {
     mutateAsync: updateDataReconciliation,
@@ -281,6 +311,15 @@ export const ImportSales = () => {
   const form = useForm<SchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      addedBy: "",
+      purpose: "",
+    },
+  });
+
+  const cashTransactionForm = useForm<CashTransactionFormType>({
+    resolver: zodResolver(cashTransactionFormSchema),
+    defaultValues: {
+      amount: 0,
       addedBy: "",
       purpose: "",
     },
@@ -922,6 +961,26 @@ export const ImportSales = () => {
     }
   };
 
+  const handleCreateCashTransaction = async (
+    values: CashTransactionFormType,
+  ) => {
+    if (!report || incomeCrmReconciliations.length === 0) {
+      toast.error("Не найден CRM документ для создания транзакции");
+      return;
+    }
+
+    const documentId = incomeCrmReconciliations[0].crmTransaction!.documentId!;
+    const amountInKopecks = Math.round(values.amount * 100);
+
+    await createCashTransaction({
+      amount: amountInKopecks,
+      reportId: params.id,
+      addedBy: values.addedBy,
+      purpose: values.purpose,
+      documentId: documentId,
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -1038,14 +1097,24 @@ export const ImportSales = () => {
       (currentTransactionFilter === "Kaspi" &&
         knp190GroupedTransactions.size > 0) ? (
         <div>
-          <h3 className="text-lg font-medium mb-3">
-            Транзакции (
-            {Object.values(reconciliations).length +
-              (currentTransactionFilter === "Kaspi"
-                ? Array.from(knp190GroupedTransactions.values()).length
-                : 0)}
-            )
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-medium">
+              Транзакции (
+              {Object.values(reconciliations).length +
+                (currentTransactionFilter === "Kaspi"
+                  ? Array.from(knp190GroupedTransactions.values()).length
+                  : 0)}
+              )
+            </h3>
+            {currentTransactionFilter === "Cash" && (
+              <Button
+                onClick={() => setIsModalCashCreateOpen(true)}
+                className="px-4 py-2"
+              >
+                Создать наличную транзакцию
+              </Button>
+            )}
+          </div>
           <div className="w-[100%] border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1162,9 +1231,14 @@ export const ImportSales = () => {
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             Нет доходных транзакций
           </h3>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             Доходные транзакции появятся после загрузки и сверки документов
           </p>
+          {currentTransactionFilter === "Cash" && (
+            <Button onClick={() => setIsModalCashCreateOpen(true)}>
+              Создать наличную транзакцию
+            </Button>
+          )}
         </div>
       )}
 
@@ -1459,7 +1533,102 @@ export const ImportSales = () => {
               </div>
             </form>
           </div>
-          <DialogFooter></DialogFooter>
+          <DialogFooter> </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Модальное окно для создания наличной транзакции */}
+      <Dialog
+        open={isModalCashCreateOpen}
+        onOpenChange={setIsModalCashCreateOpen}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Создать наличную транзакцию</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={cashTransactionForm.handleSubmit(
+              handleCreateCashTransaction,
+            )}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Сумма (₸)
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                {...cashTransactionForm.register("amount", {
+                  valueAsNumber: true,
+                })}
+                className={cn(
+                  cashTransactionForm.formState.errors.amount &&
+                    "border-red-500",
+                )}
+              />
+              {cashTransactionForm.formState.errors.amount && (
+                <p className="text-sm text-red-500 mt-1">
+                  {cashTransactionForm.formState.errors.amount.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Кто создал
+              </label>
+              <Input
+                type="text"
+                placeholder="Введите имя"
+                {...cashTransactionForm.register("addedBy")}
+                className={cn(
+                  cashTransactionForm.formState.errors.addedBy &&
+                    "border-red-500",
+                )}
+              />
+              {cashTransactionForm.formState.errors.addedBy && (
+                <p className="text-sm text-red-500 mt-1">
+                  {cashTransactionForm.formState.errors.addedBy.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Зачем создал
+              </label>
+              <Input
+                type="text"
+                placeholder="Введите цель"
+                {...cashTransactionForm.register("purpose")}
+                className={cn(
+                  cashTransactionForm.formState.errors.purpose &&
+                    "border-red-500",
+                )}
+              />
+              {cashTransactionForm.formState.errors.purpose && (
+                <p className="text-sm text-red-500 mt-1">
+                  {cashTransactionForm.formState.errors.purpose.message}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsModalCashCreateOpen(false);
+                  cashTransactionForm.reset();
+                }}
+              >
+                Отмена
+              </Button>
+              <Button type="submit" disabled={isPendingCreateCashTransaction}>
+                {isPendingCreateCashTransaction ? "Создание..." : "Создать"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

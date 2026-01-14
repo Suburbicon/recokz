@@ -677,7 +677,34 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(totalCashFlow)}
               </TableCell>
-              <TableCell className="text-right font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-total-cash-flow-${id}`}
+                  className="text-right"
+                >
+                  {formatBalance(
+                    Object.values(incomeByType).reduce((acc, val) => {
+                      acc += val[bankName as Bank] || 0;
+                      return acc;
+                    }, 0) +
+                      Object.values(expensesByType).reduce((acc, val) => {
+                        acc += val[bankName as Bank] || 0;
+                        return acc;
+                      }, 0) +
+                      (dividends?.[bankName as Bank] || 0) / 100,
+                  )}
+                </TableCell>
+              ))}
+              <TableCell className="text-right">
+                {Object.values(incomeByType).reduce((acc, val) => {
+                  acc += val["CRM"] || 0;
+                  return acc;
+                }, 0) +
+                  Object.values(expensesByType).reduce((acc, val) => {
+                    acc += val["CRM"] || 0;
+                    return acc;
+                  }, 0)}
+              </TableCell>
             </TableRow>
 
             {/* На конец периода */}
