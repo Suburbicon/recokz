@@ -219,6 +219,124 @@ export function ResultTable() {
     }, 0);
   }, [report?.reconciliations, report?.startDate, report?.endDate]);
 
+  // Продажи, не поступившие на расчетные счета по банкам
+  const notMatchedSalesByBank = useMemo(() => {
+    const result: Record<Bank, number> = {} as Record<Bank, number>;
+
+    report?.reconciliations?.forEach((r) => {
+      if (r.crmTransaction?.amount && !r.bankTransactionId && !r.type) {
+        const amount =
+          r.crmTransaction?.amount && r.crmTransaction?.amount > 0
+            ? r.crmTransaction?.amount
+            : 0;
+
+        // Определяем банк из мета-данных CRM транзакции
+        if (
+          r.crmTransaction.meta &&
+          typeof r.crmTransaction.meta === "object" &&
+          "bank" in r.crmTransaction.meta
+        ) {
+          const bank = r.crmTransaction.meta.bank as Bank;
+          result[bank] = (result[bank] || 0) + amount / 100;
+        } else if (
+          r.crmTransaction.meta &&
+          typeof r.crmTransaction.meta === "object" &&
+          "byCash" in r.crmTransaction.meta &&
+          r.crmTransaction.meta.byCash
+        ) {
+          result["CRM"] = (result["CRM"] || 0) + amount / 100;
+        }
+      }
+    });
+
+    return result;
+  }, [report?.reconciliations]);
+
+  // Движение денежных средств по банкам
+  const cashFlowByBank = useMemo(() => {
+    const result: Record<Bank, number> = {} as Record<Bank, number>;
+    const bankNames = Object.keys(bankDocuments);
+
+    bankNames.forEach((bankName) => {
+      const incomeForBank = Object.values(incomeByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+
+      const expenseForBank = Object.values(expensesByType).reduce(
+        (acc, val) => {
+          acc += val[bankName as Bank] || 0;
+          return acc;
+        },
+        0,
+      );
+
+      const dividendsForBank = (dividends?.[bankName as Bank] || 0) / 100;
+
+      result[bankName as Bank] =
+        incomeForBank + expenseForBank + dividendsForBank;
+    });
+
+    // CRM (Наличные)
+    const crmIncome = Object.values(incomeByType).reduce((acc, val) => {
+      acc += val["CRM"] || 0;
+      return acc;
+    }, 0);
+
+    const crmExpense = Object.values(expensesByType).reduce((acc, val) => {
+      acc += val["CRM"] || 0;
+      return acc;
+    }, 0);
+
+    result["CRM"] = crmIncome + crmExpense;
+
+    return result;
+  }, [bankDocuments, incomeByType, expensesByType, dividends]);
+
+  // На конец периода по банкам
+  const endPeriodBalanceByBank = useMemo(() => {
+    const result: Record<Bank, number> = {} as Record<Bank, number>;
+
+    Object.entries(bankDocuments).forEach(([bankName, documents]) => {
+      const openingBalance = documents?.reduce(
+        (acc, val) => (acc += val.openingBalance || 0),
+        0,
+      ) || 0;
+      const cashFlow = cashFlowByBank[bankName as Bank] || 0;
+      result[bankName as Bank] = openingBalance + cashFlow;
+    });
+
+    // CRM (Наличные) - только движение средств, без начального баланса
+    result["CRM"] = cashFlowByBank["CRM"] || 0;
+
+    return result;
+  }, [bankDocuments, cashFlowByBank]);
+
+  // Продажи за период по банкам
+  const salesByBankForPeriod = useMemo(() => {
+    const result: Record<Bank, number> = {} as Record<Bank, number>;
+    const bankNames = Object.keys(bankDocuments);
+
+    bankNames.forEach((bankName) => {
+      const incomeForBank = Object.values(incomeByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+      const notMatched = notMatchedSalesByBank[bankName as Bank] || 0;
+      result[bankName as Bank] = incomeForBank + notMatched;
+    });
+
+    // CRM (Наличные)
+    const crmIncome = Object.values(incomeByType).reduce((acc, val) => {
+      acc += val["CRM"] || 0;
+      return acc;
+    }, 0);
+    const crmNotMatched = notMatchedSalesByBank["CRM"] || 0;
+    result["CRM"] = crmIncome + crmNotMatched;
+
+    return result;
+  }, [bankDocuments, incomeByType, notMatchedSalesByBank]);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -388,32 +506,44 @@ export function ResultTable() {
     // Итого движение денежных средств
     const cashFlowRow = ["Итого движение денежных средств"];
     cashFlowRow.push(formatBalanceForExcel(totalCashFlow));
-    bankNames.forEach(() => cashFlowRow.push(""));
-    cashFlowRow.push("");
+    bankNames.forEach((bankName) => {
+      cashFlowRow.push(formatBalanceForExcel(cashFlowByBank[bankName as Bank] || 0));
+    });
+    cashFlowRow.push(formatBalanceForExcel(cashFlowByBank["CRM"] || 0));
     rows.push(cashFlowRow);
+
+    // На конец периода
+    const endPeriodRow = ["На конец периода"];
+    const endPeriodTotal = totalBeginnigFlow + totalCashFlow;
+    endPeriodRow.push(formatBalanceForExcel(endPeriodTotal));
+    bankNames.forEach((bankName) => {
+      endPeriodRow.push(formatBalanceForExcel(endPeriodBalanceByBank[bankName as Bank] || 0));
+    });
+    endPeriodRow.push(formatBalanceForExcel(endPeriodBalanceByBank["CRM"] || 0));
+    rows.push(endPeriodRow);
 
     // Продажи, не поступившие на расчетные счета
     const notMatchedRow = ["Продажи, не поступившие на расчетные счета"];
     notMatchedRow.push(formatBalanceForExcel(totalNotMatchedCrmDocuments));
-    bankNames.forEach(() => notMatchedRow.push(""));
-    notMatchedRow.push("");
+    bankNames.forEach((bankName) => {
+      const amount = notMatchedSalesByBank[bankName as Bank] || 0;
+      notMatchedRow.push(amount ? formatBalanceForExcel(amount) : "--");
+    });
+    notMatchedRow.push(
+      notMatchedSalesByBank["CRM"]
+        ? formatBalanceForExcel(notMatchedSalesByBank["CRM"])
+        : "--",
+    );
     rows.push(notMatchedRow);
-
-    // На конец периода
-    const endPeriodRow = ["На конец периода"];
-    const endPeriodTotal =
-      totalBeginnigFlow + totalCashFlow + totalNotMatchedCrmDocuments;
-    endPeriodRow.push(formatBalanceForExcel(endPeriodTotal / 100));
-    bankNames.forEach(() => endPeriodRow.push(""));
-    endPeriodRow.push("");
-    rows.push(endPeriodRow);
 
     // Продажи за период
     const salesRow = ["Продажи за период"];
     const salesTotal = totalNotMatchedCrmDocuments + amountOfIncomeByType;
     salesRow.push(formatBalanceForExcel(salesTotal));
-    bankNames.forEach(() => salesRow.push(""));
-    salesRow.push("");
+    bankNames.forEach((bankName) => {
+      salesRow.push(formatBalanceForExcel(salesByBankForPeriod[bankName as Bank] || 0));
+    });
+    salesRow.push(formatBalanceForExcel(salesByBankForPeriod["CRM"] || 0));
     rows.push(salesRow);
 
     // Создаем workbook
@@ -682,28 +812,11 @@ export function ResultTable() {
                   key={`${bankName}-total-cash-flow-${id}`}
                   className="text-right"
                 >
-                  {formatBalance(
-                    Object.values(incomeByType).reduce((acc, val) => {
-                      acc += val[bankName as Bank] || 0;
-                      return acc;
-                    }, 0) +
-                      Object.values(expensesByType).reduce((acc, val) => {
-                        acc += val[bankName as Bank] || 0;
-                        return acc;
-                      }, 0) +
-                      (dividends?.[bankName as Bank] || 0) / 100,
-                  )}
+                  {formatBalance(cashFlowByBank[bankName as Bank] || 0)}
                 </TableCell>
               ))}
               <TableCell className="text-right">
-                {Object.values(incomeByType).reduce((acc, val) => {
-                  acc += val["CRM"] || 0;
-                  return acc;
-                }, 0) +
-                  Object.values(expensesByType).reduce((acc, val) => {
-                    acc += val["CRM"] || 0;
-                    return acc;
-                  }, 0)}
+                {formatBalance(cashFlowByBank["CRM"] || 0)}
               </TableCell>
             </TableRow>
 
@@ -713,7 +826,17 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(totalBeginnigFlow + totalCashFlow)}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-end-period-${id}`}
+                  className="text-right font-bold"
+                >
+                  {formatBalance(endPeriodBalanceByBank[bankName as Bank] || 0)}
+                </TableCell>
+              ))}
+              <TableCell className="text-right font-bold">
+                {formatBalance(endPeriodBalanceByBank["CRM"] || 0)}
+              </TableCell>
             </TableRow>
 
             {/* Продажи, не поступившие на расчетные счета */}
@@ -724,7 +847,21 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(totalNotMatchedCrmDocuments)}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-not-matched-${id}`}
+                  className="text-right font-bold"
+                >
+                  {notMatchedSalesByBank[bankName as Bank]
+                    ? formatBalance(notMatchedSalesByBank[bankName as Bank])
+                    : "--"}
+                </TableCell>
+              ))}
+              <TableCell className="text-right font-bold">
+                {notMatchedSalesByBank["CRM"]
+                  ? formatBalance(notMatchedSalesByBank["CRM"])
+                  : "--"}
+              </TableCell>
             </TableRow>
 
             {/* Продажи, поступившие за предыдущие периоды */}
@@ -746,7 +883,17 @@ export function ResultTable() {
                   totalNotMatchedCrmDocuments + amountOfIncomeByType,
                 )}
               </TableCell>
-              <TableCell className="font-bold"></TableCell>
+              {Object.keys(bankDocuments).map((bankName, id) => (
+                <TableCell
+                  key={`${bankName}-sales-period-${id}`}
+                  className="text-right font-bold"
+                >
+                  {formatBalance(salesByBankForPeriod[bankName as Bank] || 0)}
+                </TableCell>
+              ))}
+              <TableCell className="text-right font-bold">
+                {formatBalance(salesByBankForPeriod["CRM"] || 0)}
+              </TableCell>
             </TableRow>
           </TableBody>
         </Table>
