@@ -52,7 +52,7 @@ export function Footer() {
             <div className="flex-1 space-y-4">
               <Typography size="body-16">Для бизнеса</Typography>
               <a
-                href="/documents/Privacy-Policy.pdf"
+                href="/docs/Privacy-Policy.pdf"
                 download="Privacy-Policy.pdf"
                 className="block"
               >
