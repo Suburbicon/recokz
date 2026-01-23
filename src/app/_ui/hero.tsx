@@ -102,7 +102,7 @@ export function HeroSection() {
               </FadeIn> */}
             </div>
           </div>
-          <div className="lg:hidden block">
+          {/* <div className="lg:hidden block">
             <Image
               src="/images/i-mac-full.png"
               alt="I Mac"
@@ -134,7 +134,7 @@ export function HeroSection() {
                 </Typography>
               </div>
             </FadeIn>
-          </div>
+          </div> */}
         </div>
       </div>
 

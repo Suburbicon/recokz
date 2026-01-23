@@ -8,6 +8,7 @@ import { parseDateTime, areSameDate } from "@/shared/lib/parse-date-time";
 import { parseAmount } from "@/shared/lib/amount";
 import dayjs from "dayjs";
 import { DocumentType, Transaction, BankDocumentType } from "@prisma/client";
+import { mergeKnpTransactions } from "./lib/merge-knp-transactions";
 
 export const documentsRouter = createTRPCRouter({
   parse: protectedProcedure
@@ -185,8 +186,16 @@ export const documentsRouter = createTRPCRouter({
           return acc;
         }, []);
 
-        // Calculate total balance from transactions
-        const totalBalance = data.reduce(
+        let processedData = data;
+        if (
+          input.bankName === "Kaspi" &&
+          input.bankDocumentType === "bank_statement"
+        ) {
+          processedData = mergeKnpTransactions(processedData);
+        }
+
+        // Calculate total balance from processed transactions
+        const totalBalance = processedData.reduce(
           (sum, transaction) => sum + transaction.amount,
           0,
         );
@@ -208,7 +217,7 @@ export const documentsRouter = createTRPCRouter({
         });
 
         // Step 2: Save transactions to database
-        const transactionsData = data.map((transaction) => {
+        const transactionsData = processedData.map((transaction) => {
           // Convert amount to kopecks (smallest currency unit)
           const amountInKopecks = Math.round(transaction.amount * 100);
 
@@ -239,7 +248,7 @@ export const documentsRouter = createTRPCRouter({
             input.bankName !== "CRM" ? DocumentType.bank : DocumentType.crm,
           transactionsCount: batchResult.count,
           totalBalance: totalBalance,
-          data: data.map((transaction) => ({
+          data: processedData.map((transaction) => ({
             date: transaction.date,
             amount: transaction.amount,
           })),

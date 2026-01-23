@@ -52,7 +52,7 @@ export function Footer() {
             <div className="flex-1 space-y-4">
               <Typography size="body-16">Для бизнеса</Typography>
               <a
-                href="/docs/Privacy-Policy.pdf"
+                href="/docs/Privacy-Policy.docx"
                 download="Privacy-Policy.pdf"
                 className="block"
               >
@@ -62,6 +62,19 @@ export function Footer() {
                   className="hover:underline cursor-pointer"
                 >
                   Политика конфиденциальности
+                </Typography>
+              </a>
+              <a
+                href="/docs/agreement.docx"
+                download="Privacy-Policy.pdf"
+                className="block"
+              >
+                <Typography
+                  size="body-16"
+                  color="gray-200"
+                  className="hover:underline cursor-pointer"
+                >
+                  Пользовательское соглашение
                 </Typography>
               </a>
               {/* <Typography size="body-16" color="gray-200">
