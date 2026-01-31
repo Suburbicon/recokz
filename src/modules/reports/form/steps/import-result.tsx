@@ -847,7 +847,10 @@ export function ResultTable() {
               <TableCell className="text-right font-bold">
                 {formatBalance(totalNotMatchedCrmDocuments)}
               </TableCell>
-              {Object.keys(bankDocuments).map((bankName, id) => (
+              {Object.keys(bankDocuments).map((b,i) => (
+                <TableCell key={`${b}-not-matched-${i}`} className="text-right font-bold">--</TableCell>
+              ))}
+              {/* {Object.keys(bankDocuments).map((bankName, id) => (
                 <TableCell
                   key={`${bankName}-not-matched-${id}`}
                   className="text-right font-bold"
@@ -861,7 +864,8 @@ export function ResultTable() {
                 {notMatchedSalesByBank["CRM"]
                   ? formatBalance(notMatchedSalesByBank["CRM"])
                   : "--"}
-              </TableCell>
+              </TableCell> */}
+              <TableCell className="text-right font-bold">--</TableCell>
             </TableRow>
 
             {/* Продажи, поступившие за предыдущие периоды */}

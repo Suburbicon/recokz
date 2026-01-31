@@ -47,7 +47,7 @@ export const ReconciliationDetailModal = ({
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                           {key}:
                         </span>
-                        <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate">
+                        <span className="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs">
                           {typeof value === "object"
                             ? JSON.stringify(value)
                             : String(value)}
