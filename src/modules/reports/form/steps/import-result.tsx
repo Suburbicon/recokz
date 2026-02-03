@@ -419,19 +419,16 @@ export function ResultTable() {
         (acc, doc) => acc + (doc.openingBalance || 0),
         0,
       );
-      openingBalanceRow.push(formatBalanceForExcel(bankTotal));
+      openingBalanceRow.push(formatBalanceForExcel(bankTotal / 100));
       totalOpening += bankTotal;
     });
     openingBalanceRow.push(""); // Наличные
-    openingBalanceRow[1] = formatBalanceForExcel(totalOpening); // Итого
+    openingBalanceRow[1] = formatBalanceForExcel(totalOpening / 100); // Итого
     rows.push(openingBalanceRow);
 
     // Поступления
     Object.entries(incomeByType).forEach(([typeName, amounts]) => {
-      const row = [
-        `__${typeName}__`,
-        Object.values(amounts).reduce((acc, v) => (acc += Math.abs(v)), 0),
-      ];
+      const row: (string | number)[] = [`__${typeName}__`];
       let total = 0;
       bankNames.forEach((bankName) => {
         const amount = amounts[bankName as Bank] || 0;
@@ -441,55 +438,91 @@ export function ResultTable() {
       const crmAmount = amounts["CRM"] || 0;
       row.push(crmAmount ? formatBalanceForExcel(Math.abs(crmAmount)) : "--");
       if (crmAmount) total += Math.abs(crmAmount);
-      row[1] = formatBalanceForExcel(total); // Итого
+      row.splice(1, 0, formatBalanceForExcel(total)); // Итого
       rows.push(row);
     });
 
     // Итого поступлений
-    const incomeTotalRow = ["Итого поступлений"];
+    const incomeTotalRow: (string | number)[] = ["Итого поступлений"];
     incomeTotalRow.push(formatBalanceForExcel(amountOfIncomeByType));
-    bankNames.forEach(() => incomeTotalRow.push(""));
-    incomeTotalRow.push("");
+    bankNames.forEach((bankName) => {
+      const bankTotal = Object.values(incomeByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+      incomeTotalRow.push(formatBalanceForExcel(bankTotal));
+    });
+    const crmIncomeTotal = Object.values(incomeByType).reduce((acc, val) => {
+      acc += val["CRM"] || 0;
+      return acc;
+    }, 0);
+    incomeTotalRow.push(formatBalanceForExcel(crmIncomeTotal));
     rows.push(incomeTotalRow);
 
     // Выбытия
     Object.entries(expensesByType).forEach(([typeName, amounts]) => {
-      const row = [
-        `__${typeName}__`,
-        Object.values(amounts).reduce((acc, v) => (acc += v), 0),
-      ];
+      const row: (string | number)[] = [`__${typeName}__`];
       let total = 0;
       bankNames.forEach((bankName) => {
         const amount = amounts[bankName as Bank] || 0;
-        row.push(amount ? formatBalanceForExcel(Math.abs(amount)) : "--");
-        if (amount) total += Math.abs(amount);
+        row.push(amount ? formatBalanceForExcel(amount) : "--");
+        if (amount) total += amount;
       });
       const crmAmount = amounts["CRM"] || 0;
-      row.push(crmAmount ? formatBalanceForExcel(Math.abs(crmAmount)) : "--");
-      if (crmAmount) total += Math.abs(crmAmount);
-      row[1] = formatBalanceForExcel(total); // Итого
+      row.push(crmAmount ? formatBalanceForExcel(crmAmount) : "--");
+      if (crmAmount) total += crmAmount;
+      row.splice(1, 0, formatBalanceForExcel(total)); // Итого
       rows.push(row);
     });
 
     // Итого выбытий
-    const expenseTotalRow = ["Итого выбытий"];
+    const expenseTotalRow: (string | number)[] = ["Итого выбытий"];
     expenseTotalRow.push(formatBalanceForExcel(amountOfExpenseByType));
-    bankNames.forEach(() => expenseTotalRow.push(""));
-    expenseTotalRow.push("");
+    bankNames.forEach((bankName) => {
+      const bankTotal = Object.values(expensesByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+      expenseTotalRow.push(formatBalanceForExcel(bankTotal));
+    });
+    const crmExpenseTotal = Object.values(expensesByType).reduce((acc, val) => {
+      acc += val["CRM"] || 0;
+      return acc;
+    }, 0);
+    expenseTotalRow.push(formatBalanceForExcel(crmExpenseTotal));
     rows.push(expenseTotalRow);
 
     // Итого кассовая прибыль/убыток
-    const profitRow = ["Итого кассовая прибыль/убыток"];
+    const profitRow: (string | number)[] = ["Итого кассовая прибыль/убыток"];
     profitRow.push(
       formatBalanceForExcel(amountOfIncomeByType + amountOfExpenseByType),
     );
-    bankNames.forEach(() => profitRow.push(""));
-    profitRow.push("");
+    bankNames.forEach((bankName) => {
+      const incomeForBank = Object.values(incomeByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+      const expenseForBank = Object.values(expensesByType).reduce((acc, val) => {
+        acc += val[bankName as Bank] || 0;
+        return acc;
+      }, 0);
+      profitRow.push(formatBalanceForExcel(incomeForBank + expenseForBank));
+    });
+    const crmProfit =
+      Object.values(incomeByType).reduce((acc, val) => {
+        acc += val["CRM"] || 0;
+        return acc;
+      }, 0) +
+      Object.values(expensesByType).reduce((acc, val) => {
+        acc += val["CRM"] || 0;
+        return acc;
+      }, 0);
+    profitRow.push(formatBalanceForExcel(crmProfit));
     rows.push(profitRow);
 
     // Дивиденды
     if (dividends && Object.keys(dividends).length > 0) {
-      const dividendsRow = ["Дивиденды"];
+      const dividendsRow: (string | number)[] = ["Дивиденды"];
       const dividendsTotal = Object.values(dividends).reduce(
         (acc, v) => acc + v,
         0,
@@ -499,12 +532,12 @@ export function ResultTable() {
         const amount = dividends[bankName as Bank] || 0;
         dividendsRow.push(amount ? formatBalanceForExcel(amount / 100) : "--");
       });
-      dividendsRow.push("--");
+      dividendsRow.push("--"); // Наличные
       rows.push(dividendsRow);
     }
 
     // Итого движение денежных средств
-    const cashFlowRow = ["Итого движение денежных средств"];
+    const cashFlowRow: (string | number)[] = ["Итого движение денежных средств"];
     cashFlowRow.push(formatBalanceForExcel(totalCashFlow));
     bankNames.forEach((bankName) => {
       cashFlowRow.push(formatBalanceForExcel(cashFlowByBank[bankName as Bank] || 0));
@@ -513,8 +546,8 @@ export function ResultTable() {
     rows.push(cashFlowRow);
 
     // На конец периода
-    const endPeriodRow = ["На конец периода"];
-    const endPeriodTotal = totalBeginnigFlow + totalCashFlow;
+    const endPeriodRow: (string | number)[] = ["На конец периода"];
+    const endPeriodTotal = totalBeginnigFlow / 100 + totalCashFlow;
     endPeriodRow.push(formatBalanceForExcel(endPeriodTotal));
     bankNames.forEach((bankName) => {
       endPeriodRow.push(formatBalanceForExcel(endPeriodBalanceByBank[bankName as Bank] || 0));
@@ -523,21 +556,25 @@ export function ResultTable() {
     rows.push(endPeriodRow);
 
     // Продажи, не поступившие на расчетные счета
-    const notMatchedRow = ["Продажи, не поступившие на расчетные счета"];
+    const notMatchedRow: (string | number)[] = ["Продажи, не поступившие на расчетные счета"];
     notMatchedRow.push(formatBalanceForExcel(totalNotMatchedCrmDocuments));
-    bankNames.forEach((bankName) => {
-      const amount = notMatchedSalesByBank[bankName as Bank] || 0;
-      notMatchedRow.push(amount ? formatBalanceForExcel(amount) : "--");
+    bankNames.forEach(() => {
+      notMatchedRow.push("--");
     });
-    notMatchedRow.push(
-      notMatchedSalesByBank["CRM"]
-        ? formatBalanceForExcel(notMatchedSalesByBank["CRM"])
-        : "--",
-    );
+    notMatchedRow.push("--"); // Наличные
     rows.push(notMatchedRow);
 
+    // Продажи, поступившие за предыдущие периоды
+    const previousPeriodSalesRow: (string | number)[] = ["Продажи, поступившие за предыдущие периоды"];
+    previousPeriodSalesRow.push(formatBalanceForExcel(totalPreviousPeriodSales || 0));
+    bankNames.forEach(() => {
+      previousPeriodSalesRow.push("");
+    });
+    previousPeriodSalesRow.push(""); // Наличные
+    rows.push(previousPeriodSalesRow);
+
     // Продажи за период
-    const salesRow = ["Продажи за период"];
+    const salesRow: (string | number)[] = ["Продажи за период"];
     const salesTotal = totalNotMatchedCrmDocuments + amountOfIncomeByType;
     salesRow.push(formatBalanceForExcel(salesTotal));
     bankNames.forEach((bankName) => {
@@ -553,15 +590,15 @@ export function ResultTable() {
 
     // Устанавливаем ширину колонок
     const colWidths = [
-      { wch: 40 }, // Наименование
-      { wch: 15 }, // Итого
-      ...bankNames.map(() => ({ wch: 15 })), // Банки
-      { wch: 15 }, // Наличные
+      { wch: 45 }, // Наименование
+      { wch: 18 }, // Итого
+      ...bankNames.map(() => ({ wch: 18 })), // Банки
+      { wch: 18 }, // Наличные
     ];
     ws["!cols"] = colWidths;
 
     // Скачиваем файл
-    const fileName = `Отчет_${new Date().toISOString().split("T")[0]}.xlsx`;
+    const fileName = `Отчет_${dayjs(report.startDate).format("DD.MM.YYYY")}-${dayjs(report.endDate).format("DD.MM.YYYY")}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
