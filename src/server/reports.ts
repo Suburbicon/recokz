@@ -74,13 +74,14 @@ export const reportsRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        date: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         cashBalance: z.number().optional(),
         status: z.nativeEnum(ReportStatus).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, date, ...updates } = input;
+      const { id, startDate, endDate, ...updates } = input;
 
       const dataToUpdate: {
         cashBalance?: number;
@@ -91,13 +92,17 @@ export const reportsRouter = createTRPCRouter({
         ...updates,
       };
 
-      if (date) {
-        const parsedDate = new Date(date);
+      if (startDate) {
+        const parsedDate = new Date(startDate);
         if (!isNaN(parsedDate.getTime())) {
-          const dateInISOString = parsedDate.toISOString();
-          
-          dataToUpdate.startDate = dateInISOString;
-          dataToUpdate.endDate = dateInISOString;
+          dataToUpdate.startDate = parsedDate.toISOString();
+        }
+      }
+
+      if (endDate) {
+        const parsedDate = new Date(endDate);
+        if (!isNaN(parsedDate.getTime())) {
+          dataToUpdate.endDate = parsedDate.toISOString();
         }
       }
 

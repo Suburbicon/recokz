@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "@/shared/lib/trpc/client";
 import { ReportStatus } from "@prisma/client";
 import { Button } from "@/shared/ui/button";
-import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { CalendarIcon } from "lucide-react";
 import dayjs from "dayjs";
@@ -19,12 +18,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 
 dayjs.locale("ru");
 
-export const formSchema = z.object({
-  date: z.date({ message: "Обязательное поле" }),
-  cashBalance: z
-    .number({ message: "Обязательное поле" })
-    .min(0, "Значение должно быть положительным"),
-});
+export const formSchema = z
+  .object({
+    startDate: z.date({ message: "Обязательное поле" }),
+    endDate: z.date({ message: "Обязательное поле" }),
+    cashBalance: z
+      .number({ message: "Обязательное поле" })
+      .min(0, "Значение должно быть положительным"),
+  })
+  .refine((data) => data.endDate >= data.startDate, {
+    message: "Дата окончания должна быть больше или равна дате начала",
+    path: ["endDate"],
+  });
 
 type SchemaType = z.infer<typeof formSchema>;
 
@@ -50,7 +55,8 @@ export const ImportInfoStepForm = ({
   const form = useForm<SchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      date: new Date(),
+      startDate: new Date(),
+      endDate: new Date(),
       cashBalance: 0,
     },
   });
@@ -58,7 +64,8 @@ export const ImportInfoStepForm = ({
   useEffect(() => {
     if (report) {
       form.reset({
-        date: new Date(report.startDate),
+        startDate: new Date(report.startDate),
+        endDate: new Date(report.endDate),
         cashBalance: report.cashBalance / 100, // Convert from kopecks to tenge
       });
     }
@@ -72,7 +79,8 @@ export const ImportInfoStepForm = ({
         : report.status;
     mutate({
       id: params.id,
-      date: values.date.toISOString(),
+      startDate: values.startDate.toISOString(),
+      endDate: values.endDate.toISOString(),
       cashBalance: Math.round(values.cashBalance * 100), // Convert to kopecks
       status: status,
     });
@@ -88,32 +96,65 @@ export const ImportInfoStepForm = ({
         <div className="space-y-6">
           <div className="grid grid-cols-[1fr,2fr] gap-4 items-center">
             <div className="rounded-lg">
-              <p className="text-sm font-medium">Выберите дату</p>
+              <p className="text-sm font-medium">Период сверки</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Выберите начало и конец периода
+              </p>
             </div>
-            <div>
+            <div className="flex gap-2 items-center">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !form.watch("date") && "text-muted-foreground",
+                      "flex-1 justify-start text-left font-normal",
+                      !form.watch("startDate") && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.watch("date") ? (
-                      dayjs(form.watch("date")).format("D MMMM YYYY")
+                    {form.watch("startDate") ? (
+                      dayjs(form.watch("startDate")).format("D MMMM YYYY")
                     ) : (
-                      <span>Выберите дату</span>
+                      <span>Дата начала</span>
                     )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={form.watch("date")}
+                    selected={form.watch("startDate")}
                     onSelect={(date: Date | undefined) =>
-                      date && form.setValue("date", date)
+                      date && form.setValue("startDate", date)
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-gray-500">—</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "flex-1 justify-start text-left font-normal",
+                      !form.watch("endDate") && "text-muted-foreground",
+                      form.formState.errors.endDate && "border-red-500",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.watch("endDate") ? (
+                      dayjs(form.watch("endDate")).format("D MMMM YYYY")
+                    ) : (
+                      <span>Дата окончания</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.watch("endDate")}
+                    onSelect={(date: Date | undefined) =>
+                      date && form.setValue("endDate", date)
                     }
                     initialFocus
                   />
@@ -121,6 +162,11 @@ export const ImportInfoStepForm = ({
               </Popover>
             </div>
           </div>
+          {form.formState.errors.endDate && (
+            <p className="text-sm text-red-500 -mt-4 ml-auto max-w-[66%]">
+              {form.formState.errors.endDate.message}
+            </p>
+          )}
 
           <div className="grid grid-cols-[1fr,2fr] gap-4 items-center">
             <div className="rounded-lg">
