@@ -257,7 +257,7 @@ export function TransactionsTable() {
           toast.error(e.message);
         }
       } else {
-        toast.error(e as string);
+        toast.error(e instanceof Error ? e.message : "Произошла ошибка при отправке в Рекассу");
       }
     }
 
