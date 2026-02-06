@@ -366,18 +366,21 @@ export function TransactionsTable() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {!item.bankTransactionId && (
-                    <div className="flex">
-                      <button
-                        type="button"
-                        className="cursor-pointer"
-                        onClick={() => deleteHandler(item)}
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
-                  )}
-                  {item.bankTransactionId && (
+                  <div className="flex space-x-4">
+                    {!item.bankTransactionId && (
+                      <div className="flex">
+                        <button
+                          type="button"
+                          className="cursor-pointer"
+                          onClick={() => deleteHandler(item)}
+                        >
+                          <TrashIcon />
+                        </button>
+                      </div>
+                    )}
+                    {/* {item.bankTransactionId && (
+                    
+                  )} */}
                     <div className="flex">
                       <button
                         type="button"
@@ -387,7 +390,7 @@ export function TransactionsTable() {
                         <ArrowRightFromLineIcon />
                       </button>
                     </div>
-                  )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
