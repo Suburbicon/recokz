@@ -46,8 +46,12 @@ export function TransactionsTable() {
 
   const { mutateAsync: updateCrmTransaction } =
     api.crmTransaction.update.useMutation({
-      onSuccess: () => {
-        toast("CRM транзакция оплачена");
+      onSuccess: (_data, variables) => {
+        if (variables.sentToRekassa) {
+          toast.success("Транзакция отправлена в Rekassa");
+        } else if (variables.bankTransactionId) {
+          toast("CRM транзакция оплачена");
+        }
         utils.crmTransaction.getAll.invalidate();
       },
       onError: () => {
@@ -247,6 +251,10 @@ export function TransactionsTable() {
           },
         },
       );
+      await updateCrmTransaction({
+        transactionId: transaction.id,
+        sentToRekassa: true,
+      });
     } catch (e) {
       if (e instanceof AxiosError) {
         if (e.status === 401) {
@@ -257,7 +265,11 @@ export function TransactionsTable() {
           toast.error(e.message);
         }
       } else {
-        toast.error(e instanceof Error ? e.message : "Произошла ошибка при отправке в Рекассу");
+        toast.error(
+          e instanceof Error
+            ? e.message
+            : "Произошла ошибка при отправке в Рекассу",
+        );
       }
     }
 
@@ -308,7 +320,7 @@ export function TransactionsTable() {
               <TableHead>Сумма</TableHead>
               <TableHead>Описание</TableHead>
               <TableHead className="w-[80px]">Оплатить</TableHead>
-              <TableHead className="w-[50px]">Действия</TableHead>
+              <TableHead className="w-[120px]">Действия</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -322,14 +334,21 @@ export function TransactionsTable() {
                 }
               >
                 <TableCell>
-                  <CustomCheckbox
-                    id={item.id}
-                    name={item.id}
-                    label=""
-                    checked={checkedTransactions.includes(item.id)}
-                    onChange={(e) => handleOptionChange(e, item.amount)}
-                  />
-                  {item.bankTransactionId ? "Оплачено" : "Не оплачено"}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      {!item.bankTransactionId && (
+                        <CustomCheckbox
+                          id={item.id}
+                          name={item.id}
+                          label=""
+                          checked={checkedTransactions.includes(item.id)}
+                          onChange={(e) => handleOptionChange(e, item.amount)}
+                        />
+                      )}
+                      {item.bankTransactionId ? "Оплачено" : "Не оплачено"}
+                    </div>
+                    <p>{item.sentToRekassa ? "Отправлено в Rekassa" : ""}</p>
+                  </div>
                 </TableCell>
                 <TableCell>
                   {dayjs(item.createdAt).format("DD.MM.YYYY, HH:mm")}
@@ -343,20 +362,20 @@ export function TransactionsTable() {
                 </TableCell>
                 <TableCell>
                   {!checkedTransactions.includes(item.id) && (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-col gap-2">
                       <Button
-                        className="flex w-full px-1 bg-red-600 text-white"
+                        className="flex w-full px-0.5 bg-red-700 text-white"
                         variant="default"
-                        size="icon"
+                        size="sm"
                         asChild
                         onClick={() => sendPaymentKaspi(item)}
                       >
                         <div>Kaspi</div>
                       </Button>
                       <Button
-                        className="flex w-full px-1 bg-green-600 text-white"
+                        className="flex w-full px-0.5 bg-green-600 text-white"
                         variant="default"
-                        size="icon"
+                        size="sm"
                         asChild
                         onClick={() => sendPaymentHalyk(item)}
                       >
@@ -366,7 +385,7 @@ export function TransactionsTable() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-4">
+                  <div className="flex space-x-6">
                     {!item.bankTransactionId && (
                       <div className="flex">
                         <button

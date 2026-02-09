@@ -137,6 +137,7 @@ model CrmTransaction {
   date          DateTime @map("date")
   meta          Json     @map("meta")
   transactionId String   @map("transactionId")
+  sentToRekassa Boolean  @default(false) @map("sent_to_rekassa")
 
   bankTransaction   BankTransaction? @relation(fields: [bankTransactionId], references: [id])
   bankTransactionId String?          @map("bank_transaction_id")

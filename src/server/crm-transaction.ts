@@ -21,12 +21,26 @@ export const crmTransactionRouter = createTRPCRouter({
     update: protectedProcedure
         .input(z.object({
             transactionId: z.string(),
-            bankTransactionId: z.string()
+            bankTransactionId: z.string().optional(),
+            sentToRekassa: z.boolean().optional()
         }))
         .mutation(async ({ctx, input}) => {
+            const dataToUpdate: {
+                bankTransactionId?: string;
+                sentToRekassa?: boolean;
+            } = {};
+
+            if (input.bankTransactionId !== undefined) {
+                dataToUpdate.bankTransactionId = input.bankTransactionId;
+            }
+
+            if (input.sentToRekassa !== undefined) {
+                dataToUpdate.sentToRekassa = input.sentToRekassa;
+            }
+
             await ctx.prisma.crmTransaction.update({
                 where: { id: input.transactionId },
-                data: { bankTransactionId: input.bankTransactionId }
+                data: dataToUpdate
             })
         }),
     retrive: protectedProcedure

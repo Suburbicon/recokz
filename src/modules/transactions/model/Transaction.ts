@@ -62,4 +62,5 @@ export interface Transaction {
     organizationId: string;
     createdAt: string;
     bankTransactionId: string | null;
+    sentToRekassa: boolean;
 }
