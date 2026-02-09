@@ -6,6 +6,7 @@ import { documentsRouter } from "./documents";
 import { reconciliationRouter } from "./reconciliation";
 import { webhookRouter } from "./webhook";
 import { crmTransactionRouter } from "./crm-transaction";
+import { rekassaRouter } from "./rekassa";
 import { bankTransactionRouter } from "./bank-transaction";
 import { transactionRouter } from "./transaction";
 import { userRouter } from "./user";
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   reconciliation: reconciliationRouter,
   webhook: webhookRouter,
   crmTransaction: crmTransactionRouter,
+  rekassa: rekassaRouter,
   bankTransaction: bankTransactionRouter,
   transaction: transactionRouter,
   user: userRouter,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, ChangeEvent } from "react";
-import { TrashIcon, ArrowRightFromLineIcon } from "lucide-react";
+import { TrashIcon, ArrowRightFromLineIcon, Download } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -19,9 +19,9 @@ import { api as axiosApi } from "@/shared/client";
 import { toast } from "sonner";
 import { useUser } from "@clerk/clerk-react";
 import { CustomCheckbox } from "@/shared/ui/checkbox";
-import { RekassaStorage } from "@/shared/lib/storage";
 import { formatDateToCustomObject } from "../utils";
 import { Axios, AxiosError } from "axios";
+import * as XLSX from "xlsx";
 
 export function TransactionsTable() {
   const { user } = useUser();
@@ -29,9 +29,12 @@ export function TransactionsTable() {
   const [isLoading, setLoading] = useState(false);
   const [checkedTransactions, setCheckedTransactions] = useState<string[]>([]);
   const [amountOfTransactions, setAmountOfTransaction] = useState(0);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
   const { data: transactions } = api.crmTransaction.getAll.useQuery() as {
     data: Transaction[];
   };
+  const { data: rekassaCredentials } = api.rekassa.getCredentials.useQuery();
 
   const { mutateAsync: deleteCrmTransaction } =
     api.crmTransaction.delete.useMutation({
@@ -174,10 +177,7 @@ export function TransactionsTable() {
     setLoading(true);
 
     try {
-      const storage = new RekassaStorage();
-      const data = storage.getRekassaData();
-
-      if (!data.id) {
+      if (!rekassaCredentials?.id || !rekassaCredentials?.token) {
         toast.error(
           "Не получилось авторизоваться в Rekassa, Перейдите на страницу авторизации (Rekassa)",
         );
@@ -189,7 +189,7 @@ export function TransactionsTable() {
       const price = transaction.amount.toString();
 
       await axiosApi.post(
-        `${process.env.NEXT_PUBLIC_API_REKASSA}/api/crs/${data.id}/tickets`,
+        `${process.env.NEXT_PUBLIC_API_REKASSA}/api/crs/${rekassaCredentials.id}/tickets`,
         {
           operation: "OPERATION_SELL",
           ...formattedDate,
@@ -246,7 +246,7 @@ export function TransactionsTable() {
         },
         {
           headers: {
-            Authorization: `Bearer ${data.token}`,
+            Authorization: `Bearer ${rekassaCredentials.token}`,
             "X-Request-ID": crypto.randomUUID(),
           },
         },
@@ -276,11 +276,144 @@ export function TransactionsTable() {
     setLoading(false);
   };
 
+  const exportTransactions = () => {
+    const startDate = exportStartDate
+      ? dayjs(exportStartDate).startOf("day")
+      : null;
+    const endDate = exportEndDate ? dayjs(exportEndDate).endOf("day") : null;
+
+    const filteredTransactions = transactions.filter((item) => {
+      const txDate = dayjs(item.createdAt);
+      if (startDate && txDate.isBefore(startDate)) return false;
+      if (endDate && txDate.isAfter(endDate)) return false;
+      return true;
+    });
+
+    const rowsData = filteredTransactions.map((item) => {
+      const service = item.meta?.data?.expense?.title || "";
+      const costWithoutDiscount =
+        typeof item.meta?.data?.amount === "number"
+          ? item.meta.data.amount
+          : null;
+      const paymentChannel =
+        item.meta?.data?.account?.title || item.meta?.crm || "";
+      const paymentSum = Number(item.amount);
+      const discountSize =
+        typeof item.meta?.data?.amount === "number" &&
+        typeof item.meta?.data?.record?.paid_full === "number"
+          ? item.meta.data.amount - item.meta.data.record.paid_full
+          : null;
+      const sentToOfd =
+        typeof item.sentToRekassa === "boolean"
+          ? item.sentToRekassa
+            ? "Да"
+            : "Нет"
+          : "";
+
+      return {
+        service,
+        costWithoutDiscount,
+        paymentChannel,
+        paymentSum,
+        discountSize,
+        sentToOfd,
+      };
+    });
+
+    const columns = [
+      {
+        key: "service",
+        label: "Услуга",
+        exists: rowsData.some((row) => row.service),
+      },
+      {
+        key: "costWithoutDiscount",
+        label: "Стоимость без скидки",
+        exists: rowsData.some((row) => row.costWithoutDiscount !== null),
+      },
+      {
+        key: "paymentChannel",
+        label: "Канал оплаты",
+        exists: rowsData.some((row) => row.paymentChannel),
+      },
+      {
+        key: "paymentSum",
+        label: "Сумма оплаты",
+        exists: rowsData.some((row) => Number.isFinite(row.paymentSum)),
+      },
+      {
+        key: "discountSize",
+        label: "Размер скидки",
+        exists: rowsData.some((row) => row.discountSize !== null),
+      },
+      {
+        key: "sentToOfd",
+        label: "Отправлено в ОФД",
+        exists: rowsData.some((row) => row.sentToOfd),
+      },
+    ].filter((column) => column.exists);
+
+    if (columns.length === 0) {
+      toast.error("Нет данных для выгрузки");
+      return;
+    }
+
+    const rows: (string | number)[][] = [
+      columns.map((column) => column.label),
+    ];
+
+    rowsData.forEach((row) => {
+      rows.push(
+        columns.map((column) => {
+          const value = row[column.key as keyof typeof row];
+          return value === null || value === "" ? "--" : value;
+        }),
+      );
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Транзакции");
+
+    ws["!cols"] = columns.map(() => ({ wch: 24 }));
+
+    const rangeLabel =
+      exportStartDate || exportEndDate
+        ? `${exportStartDate || "start"}-${exportEndDate || "end"}`
+        : dayjs().format("YYYY-MM-DD");
+    const fileName = `transactions_${rangeLabel}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="flex flex-col gap-8 mb-12">
       <div className="flex justify-between flex gap-4">
         <div>
           <h1 className="text-3xl">Прием оплат</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={exportStartDate}
+            onChange={(event) => setExportStartDate(event.target.value)}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          />
+          <span className="text-muted-foreground">—</span>
+          <input
+            type="date"
+            value={exportEndDate}
+            onChange={(event) => setExportEndDate(event.target.value)}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportTransactions}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Экспорт
+          </Button>
         </div>
         {checkedTransactions.length !== 0 && (
           <div>
