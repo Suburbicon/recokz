@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "@/shared/lib/trpc/server";
 import { decryptString, encryptString } from "@/server/lib/encryption";
 
@@ -11,6 +12,10 @@ export const rekassaRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.organizationId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
       const encryptedId = encryptString(input.id);
       const encryptedToken = encryptString(input.token);
 
@@ -28,6 +33,10 @@ export const rekassaRouter = createTRPCRouter({
       });
     }),
   getCredentials: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.organizationId) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
     const conf = await ctx.prisma.conf.findUnique({
       where: { organizationId: ctx.organizationId },
     });
