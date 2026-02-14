@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const crmTransactionRouter = createTRPCRouter({
     getAll: protectedProcedure
-        .query(async ({ ctx, input}) => {
+        .query(async ({ ctx }) => {
             const transactions = await ctx.prisma.crmTransaction.findMany({
                 where: {
                     organizationId: ctx.organizationId,
@@ -17,6 +17,57 @@ export const crmTransactionRouter = createTRPCRouter({
                 }
             });
             return transactions;
+        }),
+    getPaginated: protectedProcedure
+        .input(z.object({
+            page: z.number().min(1).default(1),
+            limit: z.number().min(1).max(100).default(20),
+        }))
+        .query(async ({ ctx, input }) => {
+            const where = {
+                organizationId: ctx.organizationId,
+                transactionId: { not: '0' },
+            };
+            const [items, total] = await Promise.all([
+                ctx.prisma.crmTransaction.findMany({
+                    where,
+                    orderBy: { createdAt: "desc" },
+                    skip: (input.page - 1) * input.limit,
+                    take: input.limit,
+                }),
+                ctx.prisma.crmTransaction.count({ where }),
+            ]);
+            return { items, total };
+        }),
+    getForExport: protectedProcedure
+        .input(z.object({
+            startDate: z.string().optional(),
+            endDate: z.string().optional(),
+        }))
+        .query(async ({ ctx, input }) => {
+            const baseWhere = {
+                organizationId: ctx.organizationId,
+                transactionId: { not: '0' as const },
+            };
+            const dateFilter =
+                input.startDate || input.endDate
+                    ? {
+                          createdAt: {
+                              ...(input.startDate && { gte: new Date(input.startDate) }),
+                              ...(input.endDate && {
+                                  lte: (() => {
+                                      const end = new Date(input.endDate!);
+                                      end.setHours(23, 59, 59, 999);
+                                      return end;
+                                  })(),
+                              }),
+                          },
+                      }
+                    : {};
+            return ctx.prisma.crmTransaction.findMany({
+                where: { ...baseWhere, ...dateFilter },
+                orderBy: { createdAt: "desc" },
+            });
         }),
     update: protectedProcedure
         .input(z.object({

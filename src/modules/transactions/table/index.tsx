@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, ChangeEvent } from "react";
-import { TrashIcon, ArrowRightFromLineIcon, Download } from "lucide-react";
+import {
+  TrashIcon,
+  ArrowRightFromLineIcon,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -31,9 +37,18 @@ export function TransactionsTable() {
   const [amountOfTransactions, setAmountOfTransaction] = useState(0);
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
-  const { data: transactions } = api.crmTransaction.getAll.useQuery() as {
-    data: Transaction[];
-  };
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);
+
+  const { data: paginatedData, isLoading: isTransactionsLoading } =
+    api.crmTransaction.getPaginated.useQuery({
+      page,
+      limit,
+    });
+  const transactions = (paginatedData?.items ?? []) as unknown as Transaction[];
+  const totalTransactions = paginatedData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalTransactions / limit));
+
   const { data: rekassaCredentials } = api.rekassa.getCredentials.useQuery();
 
   const { mutateAsync: deleteCrmTransaction } =
@@ -41,6 +56,7 @@ export function TransactionsTable() {
       onSuccess: () => {
         toast("CRM транзакция удалена");
         utils.crmTransaction.getAll.invalidate();
+        utils.crmTransaction.getPaginated.invalidate();
       },
       onError: () => {
         toast("Не получилось удалить транзакцию");
@@ -56,13 +72,14 @@ export function TransactionsTable() {
           toast("CRM транзакция оплачена");
         }
         utils.crmTransaction.getAll.invalidate();
+        utils.crmTransaction.getPaginated.invalidate();
       },
       onError: () => {
         toast("Не получилось оплатить транзакцию в ручную");
       },
     });
 
-  if (!transactions || isLoading || !user) {
+  if (isTransactionsLoading || isLoading || !user) {
     return (
       <div className="p-6">
         <LoaderIcon className="animate-spin" />
@@ -276,113 +293,115 @@ export function TransactionsTable() {
     setLoading(false);
   };
 
-  const exportTransactions = () => {
-    const startDate = exportStartDate
-      ? dayjs(exportStartDate).startOf("day")
-      : null;
-    const endDate = exportEndDate ? dayjs(exportEndDate).endOf("day") : null;
+  const exportTransactions = async () => {
+    try {
+      const filteredTransactions =
+        await utils.crmTransaction.getForExport.fetch({
+          startDate: exportStartDate || undefined,
+          endDate: exportEndDate || undefined,
+        });
 
-    const filteredTransactions = transactions.filter((item) => {
-      const txDate = dayjs(item.createdAt);
-      if (startDate && txDate.isBefore(startDate)) return false;
-      if (endDate && txDate.isAfter(endDate)) return false;
-      return true;
-    });
+      const rowsData = filteredTransactions.map((item) => {
+        const meta = (item.meta || {}) as Record<string, unknown>;
+        const data = (meta.data || {}) as Record<string, unknown>;
+        const expense = (data.expense || {}) as Record<string, unknown>;
+        const account = (data.account || {}) as Record<string, unknown>;
+        const record = (data.record || {}) as Record<string, unknown>;
 
-    const rowsData = filteredTransactions.map((item) => {
-      const service = item.meta?.data?.expense?.title || "";
-      const costWithoutDiscount =
-        typeof item.meta?.data?.amount === "number"
-          ? item.meta.data.amount
-          : null;
-      const paymentChannel =
-        item.meta?.data?.account?.title || item.meta?.crm || "";
-      const paymentSum = Number(item.amount);
-      const discountSize =
-        typeof item.meta?.data?.amount === "number" &&
-        typeof item.meta?.data?.record?.paid_full === "number"
-          ? item.meta.data.amount - item.meta.data.record.paid_full
-          : null;
-      const sentToOfd =
-        typeof item.sentToRekassa === "boolean"
-          ? item.sentToRekassa
-            ? "Да"
-            : "Нет"
-          : "";
+        const service = String(expense.title || "");
+        const costWithoutDiscount =
+          typeof data.amount === "number" ? data.amount : null;
+        const paymentChannel = String(account.title || meta.crm || "");
+        const paymentSum = Number(item.amount);
+        const discountSize =
+          typeof data.amount === "number" &&
+          typeof record.paid_full === "number"
+            ? (data.amount as number) - (record.paid_full as number)
+            : null;
+        const sentToOfd =
+          typeof item.sentToRekassa === "boolean"
+            ? item.sentToRekassa
+              ? "Да"
+              : "Нет"
+            : "";
 
-      return {
-        service,
-        costWithoutDiscount,
-        paymentChannel,
-        paymentSum,
-        discountSize,
-        sentToOfd,
-      };
-    });
+        return {
+          service,
+          costWithoutDiscount,
+          paymentChannel,
+          paymentSum,
+          discountSize,
+          sentToOfd,
+        };
+      });
 
-    const columns = [
-      {
-        key: "service",
-        label: "Услуга",
-        exists: rowsData.some((row) => row.service),
-      },
-      {
-        key: "costWithoutDiscount",
-        label: "Стоимость без скидки",
-        exists: rowsData.some((row) => row.costWithoutDiscount !== null),
-      },
-      {
-        key: "paymentChannel",
-        label: "Канал оплаты",
-        exists: rowsData.some((row) => row.paymentChannel),
-      },
-      {
-        key: "paymentSum",
-        label: "Сумма оплаты",
-        exists: rowsData.some((row) => Number.isFinite(row.paymentSum)),
-      },
-      {
-        key: "discountSize",
-        label: "Размер скидки",
-        exists: rowsData.some((row) => row.discountSize !== null),
-      },
-      {
-        key: "sentToOfd",
-        label: "Отправлено в ОФД",
-        exists: rowsData.some((row) => row.sentToOfd),
-      },
-    ].filter((column) => column.exists);
+      const columns = [
+        {
+          key: "service",
+          label: "Услуга",
+          exists: rowsData.some((row) => row.service),
+        },
+        {
+          key: "costWithoutDiscount",
+          label: "Стоимость без скидки",
+          exists: rowsData.some((row) => row.costWithoutDiscount !== null),
+        },
+        {
+          key: "paymentChannel",
+          label: "Канал оплаты",
+          exists: rowsData.some((row) => row.paymentChannel),
+        },
+        {
+          key: "paymentSum",
+          label: "Сумма оплаты",
+          exists: rowsData.some((row) => Number.isFinite(row.paymentSum)),
+        },
+        {
+          key: "discountSize",
+          label: "Размер скидки",
+          exists: rowsData.some((row) => row.discountSize !== null),
+        },
+        {
+          key: "sentToOfd",
+          label: "Отправлено в ОФД",
+          exists: rowsData.some((row) => row.sentToOfd),
+        },
+      ].filter((column) => column.exists);
 
-    if (columns.length === 0) {
-      toast.error("Нет данных для выгрузки");
-      return;
+      if (columns.length === 0) {
+        toast.error("Нет данных для выгрузки");
+        return;
+      }
+
+      const rows: (string | number)[][] = [
+        columns.map((column) => column.label),
+      ];
+
+      rowsData.forEach((row) => {
+        rows.push(
+          columns.map((column) => {
+            const value = row[column.key as keyof typeof row];
+            return value === null || value === "" ? "--" : value;
+          }),
+        );
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Транзакции");
+
+      ws["!cols"] = columns.map(() => ({ wch: 24 }));
+
+      const rangeLabel =
+        exportStartDate || exportEndDate
+          ? `${exportStartDate || "start"}-${exportEndDate || "end"}`
+          : dayjs().format("YYYY-MM-DD");
+      const fileName = `transactions_${rangeLabel}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success("Файл экспортирован");
+    } catch (e) {
+      toast.error("Ошибка при выгрузке");
     }
-
-    const rows: (string | number)[][] = [
-      columns.map((column) => column.label),
-    ];
-
-    rowsData.forEach((row) => {
-      rows.push(
-        columns.map((column) => {
-          const value = row[column.key as keyof typeof row];
-          return value === null || value === "" ? "--" : value;
-        }),
-      );
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Транзакции");
-
-    ws["!cols"] = columns.map(() => ({ wch: 24 }));
-
-    const rangeLabel =
-      exportStartDate || exportEndDate
-        ? `${exportStartDate || "start"}-${exportEndDate || "end"}`
-        : dayjs().format("YYYY-MM-DD");
-    const fileName = `transactions_${rangeLabel}.xlsx`;
-    XLSX.writeFile(wb, fileName);
   };
 
   return (
@@ -442,112 +461,149 @@ export function TransactionsTable() {
         )}
       </div>
 
-      {transactions.length === 0 && <div>У вас нет активных транзакций</div>}
+      {!isTransactionsLoading && transactions.length === 0 && (
+        <div>У вас нет активных транзакций</div>
+      )}
 
-      {transactions && transactions.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Статус</TableHead>
-              <TableHead>Дата</TableHead>
-              <TableHead>Сумма</TableHead>
-              <TableHead>Описание</TableHead>
-              <TableHead className="w-[80px]">Оплатить</TableHead>
-              <TableHead className="w-[120px]">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((item) => (
-              <TableRow
-                key={item.id}
-                className={
-                  item.bankTransactionId
-                    ? "bg-[#1b6b23a0] text-white hover:bg-[#1b6b23a0]"
-                    : ""
-                }
-              >
-                <TableCell>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
+      {transactions.length > 0 && (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Статус</TableHead>
+                <TableHead>Дата</TableHead>
+                <TableHead>Сумма</TableHead>
+                <TableHead>Описание</TableHead>
+                <TableHead className="w-[80px]">Оплатить</TableHead>
+                <TableHead className="w-[120px]">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className={
+                    item.bankTransactionId
+                      ? "bg-[#1b6b23a0] text-white hover:bg-[#1b6b23a0]"
+                      : ""
+                  }
+                >
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        {!item.bankTransactionId && (
+                          <CustomCheckbox
+                            id={item.id}
+                            name={item.id}
+                            label=""
+                            checked={checkedTransactions.includes(item.id)}
+                            onChange={(e) => handleOptionChange(e, item.amount)}
+                          />
+                        )}
+                        {item.bankTransactionId ? "Оплачено" : "Не оплачено"}
+                      </div>
+                      <p>{item.sentToRekassa ? "Отправлено в Rekassa" : ""}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {dayjs(item.createdAt).format("DD.MM.YYYY, HH:mm")}
+                  </TableCell>
+                  <TableCell>{formatBalance(Number(item.amount))}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <p>{`${item.meta.crm || ""} ${item.meta?.data?.expense?.title || ""}`}</p>
+                      <p>{`${item.meta?.data?.account?.title || ""}`}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {!checkedTransactions.includes(item.id) && (
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          className="flex w-full px-0.5 bg-red-700 text-white"
+                          variant="default"
+                          size="sm"
+                          asChild
+                          onClick={() => sendPaymentKaspi(item)}
+                        >
+                          <div>Kaspi</div>
+                        </Button>
+                        <Button
+                          className="flex w-full px-0.5 bg-green-600 text-white"
+                          variant="default"
+                          size="sm"
+                          asChild
+                          onClick={() => sendPaymentHalyk(item)}
+                        >
+                          <div>Halyk</div>
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-6">
                       {!item.bankTransactionId && (
-                        <CustomCheckbox
-                          id={item.id}
-                          name={item.id}
-                          label=""
-                          checked={checkedTransactions.includes(item.id)}
-                          onChange={(e) => handleOptionChange(e, item.amount)}
-                        />
+                        <div className="flex">
+                          <button
+                            type="button"
+                            className="cursor-pointer"
+                            onClick={() => deleteHandler(item)}
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
                       )}
-                      {item.bankTransactionId ? "Оплачено" : "Не оплачено"}
-                    </div>
-                    <p>{item.sentToRekassa ? "Отправлено в Rekassa" : ""}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {dayjs(item.createdAt).format("DD.MM.YYYY, HH:mm")}
-                </TableCell>
-                <TableCell>{formatBalance(Number(item.amount))}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <p>{`${item.meta.crm || ""} ${item.meta?.data?.expense?.title || ""}`}</p>
-                    <p>{`${item.meta?.data?.account?.title || ""}`}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {!checkedTransactions.includes(item.id) && (
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        className="flex w-full px-0.5 bg-red-700 text-white"
-                        variant="default"
-                        size="sm"
-                        asChild
-                        onClick={() => sendPaymentKaspi(item)}
-                      >
-                        <div>Kaspi</div>
-                      </Button>
-                      <Button
-                        className="flex w-full px-0.5 bg-green-600 text-white"
-                        variant="default"
-                        size="sm"
-                        asChild
-                        onClick={() => sendPaymentHalyk(item)}
-                      >
-                        <div>Halyk</div>
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-6">
-                    {!item.bankTransactionId && (
+                      {/* {item.bankTransactionId && (
+                    
+                  )} */}
                       <div className="flex">
                         <button
                           type="button"
                           className="cursor-pointer"
-                          onClick={() => deleteHandler(item)}
+                          onClick={() => sendToRekassa(item)}
                         >
-                          <TrashIcon />
+                          <ArrowRightFromLineIcon />
                         </button>
                       </div>
-                    )}
-                    {/* {item.bankTransactionId && (
-                    
-                  )} */}
-                    <div className="flex">
-                      <button
-                        type="button"
-                        className="cursor-pointer"
-                        onClick={() => sendToRekassa(item)}
-                      >
-                        <ArrowRightFromLineIcon />
-                      </button>
                     </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {totalTransactions > limit && (
+            <div className="flex items-center justify-between border-t px-2 py-4">
+              <p className="text-sm text-muted-foreground">
+                Показано {(page - 1) * limit + 1}–
+                {Math.min(page * limit, totalTransactions)} из{" "}
+                {totalTransactions}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Назад
+                </Button>
+                <span className="text-sm">
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Вперёд
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
