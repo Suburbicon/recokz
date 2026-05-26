@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { mergeKnpTransactions } from "./lib/merge-knp-transactions";
+import { isSignificantBankTransaction } from "./lib/bank-filter";
 import { extractDateFromPaymentPurpose } from "@/modules/reports/form/steps/lib/extract-date-from-payment-purpose";
 
 dayjs.extend(utc);
@@ -23,21 +24,6 @@ const reconciliationInclude = {
     type: true,
   },
 } as const;
-
-function matchesBankFilter(
-  meta: unknown,
-  bank: "Kaspi" | "Halyk",
-): boolean {
-  if (!meta || typeof meta !== "object" || !("bank" in meta)) return false;
-  if ((meta as { bank?: string }).bank !== bank) return false;
-  if (bank === "Halyk") {
-    const purpose = String(
-      (meta as Record<string, unknown>)["Назначение платежа"] ?? "",
-    );
-    if (purpose.includes("Расчеты по карточкам")) return false;
-  }
-  return true;
-}
 
 function extractKnp190Dates(
   transactions: {
@@ -122,7 +108,7 @@ export const bankStatementRouter = createTRPCRouter({
       });
 
       const filtered = transactions.filter((t) =>
-        matchesBankFilter(t.meta, input.bank),
+        isSignificantBankTransaction(t.meta, input.bank),
       );
 
       const reportIds = [

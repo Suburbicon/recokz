@@ -218,6 +218,133 @@ export const organizationRouter = createTRPCRouter({
       });
       return { success: true };
     }),
+
+  getMembers: protectedProcedure.query(async ({ ctx }) => {
+    const organizationId = ctx.organizationId;
+    if (!organizationId) {
+      return [];
+    }
+
+    const memberships = await ctx.prisma.userOrganization.findMany({
+      where: { organizationId },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return memberships.map((m) => ({
+      id: m.user.id,
+      membershipId: m.id,
+      fullName: m.user.fullName,
+      email: m.user.email,
+      position: m.user.position,
+      phone: m.user.phone,
+      joinedAt: m.createdAt,
+      clerkUserId: m.user.clerkUserId,
+    }));
+  }),
+
+  removeMember: protectedProcedure
+    .input(z.object({ userId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const organizationId = ctx.organizationId;
+      if (!organizationId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Сначала выберите организацию",
+        });
+      }
+
+      const currentDbUser = await ctx.prisma.user.findUnique({
+        where: { clerkUserId: ctx.userId },
+      });
+      if (currentDbUser?.id === input.userId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Нельзя удалить себя из компании",
+        });
+      }
+
+      const membership = await ctx.prisma.userOrganization.findUnique({
+        where: {
+          userId_organizationId: { userId: input.userId, organizationId },
+        },
+        include: { user: true },
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Сотрудник не найден в этой компании",
+        });
+      }
+
+      await ctx.prisma.userOrganization.delete({
+        where: { id: membership.id },
+      });
+
+      try {
+        const meta = (await ctx.clerk.users.getUser(membership.user.clerkUserId))
+          .publicMetadata as {
+          organizationIds?: string[];
+          currentOrganizationId?: string | null;
+        };
+        const newIds = (meta?.organizationIds ?? []).filter(
+          (id) => id !== organizationId,
+        );
+        const newCurrent =
+          meta?.currentOrganizationId === organizationId
+            ? newIds[0] ?? null
+            : meta?.currentOrganizationId ?? null;
+        await ctx.clerk.users.updateUserMetadata(membership.user.clerkUserId, {
+          publicMetadata: {
+            organizationIds: newIds,
+            currentOrganizationId: newCurrent,
+          },
+        });
+      } catch {
+        // Clerk-метаданные не критичны — оставляем DB-связь удалённой.
+      }
+
+      return { success: true };
+    }),
+
+  updateMemberPosition: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string().uuid(),
+        position: z.string().max(120),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const organizationId = ctx.organizationId;
+      if (!organizationId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Сначала выберите организацию",
+        });
+      }
+
+      const membership = await ctx.prisma.userOrganization.findUnique({
+        where: {
+          userId_organizationId: { userId: input.userId, organizationId },
+        },
+      });
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Сотрудник не найден в этой компании",
+        });
+      }
+
+      const updated = await ctx.prisma.user.update({
+        where: { id: input.userId },
+        data: { position: input.position.trim() || null },
+      });
+
+      return {
+        userId: updated.id,
+        position: updated.position,
+      };
+    }),
 });
 
 export type OrganizationRouter = typeof organizationRouter;

@@ -13,11 +13,12 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
 import { InputField } from "@/shared/ui/_fields/input-field";
+import { SelectField } from "@/shared/ui/_fields/select-field";
 import { api } from "@/shared/lib/trpc/client";
 import { toast } from "sonner";
 
 const schema = z.object({
-  addedBy: z.string().min(1, "Обязательное поле"),
+  addedById: z.string().min(1, "Выберите сотрудника"),
   purpose: z.string().min(1, "Обязательное поле"),
 });
 
@@ -45,8 +46,18 @@ export function CreateCrmDialog({
   const utils = api.useUtils();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { addedBy: "", purpose: "" },
+    defaultValues: { addedById: "", purpose: "" },
   });
+
+  const { data: members = [], isLoading: isLoadingMembers } =
+    api.organization.getMembers.useQuery(undefined, {
+      enabled: open,
+    });
+
+  const memberOptions = members.map((m) => ({
+    label: m.position ? `${m.fullName} — ${m.position}` : m.fullName,
+    value: m.id,
+  }));
 
   const { mutateAsync: createTransaction, isPending: isCreating } =
     api.transaction.create.useMutation();
@@ -69,12 +80,18 @@ export function CreateCrmDialog({
       toast.error("В отчёте нет CRM-документа — добавьте его в отчёте");
       return;
     }
+    const selectedMember = members.find((m) => m.id === values.addedById);
+    if (!selectedMember) {
+      toast.error("Не удалось определить сотрудника");
+      return;
+    }
     const tx = await createTransaction({
       amount: bankAmountKopecks,
       documentId: crmDocumentId,
       meta: {
         Purpose: values.purpose,
-        "Added by": values.addedBy,
+        "Added by": selectedMember.fullName,
+        addedById: selectedMember.id,
       },
     });
     await updateBankReconcile({
@@ -92,7 +109,19 @@ export function CreateCrmDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <InputField name="addedBy" label="Кто добавил" placeholder="ФИО" />
+            <SelectField
+              name="addedById"
+              label="Кто добавил"
+              placeholder={
+                isLoadingMembers
+                  ? "Загрузка сотрудников…"
+                  : memberOptions.length === 0
+                    ? "В компании нет сотрудников"
+                    : "Выберите сотрудника"
+              }
+              options={memberOptions}
+              disabled={isLoadingMembers || memberOptions.length === 0}
+            />
             <InputField
               name="purpose"
               label="Назначение платежа"
@@ -106,7 +135,12 @@ export function CreateCrmDialog({
               >
                 Отмена
               </Button>
-              <Button type="submit" disabled={pending || !crmDocumentId}>
+              <Button
+                type="submit"
+                disabled={
+                  pending || !crmDocumentId || memberOptions.length === 0
+                }
+              >
                 {pending ? "Сохранение…" : "Создать и связать"}
               </Button>
             </DialogFooter>
